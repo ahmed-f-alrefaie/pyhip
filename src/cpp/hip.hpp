@@ -796,65 +796,65 @@ namespace pyhip
       }
   };
 
-  class array : public boost::noncopyable, public context_dependent
-  {
-    private:
-      hipArray m_array;
-      bool m_managed;
+//   class array : public boost::noncopyable, public context_dependent
+//   {
+//     private:
+//       hipArray m_array;
+//       bool m_managed;
 
-    public:
-      array(const HIP_ARRAY_DESCRIPTOR &descr)
-        : m_managed(true)
-      { PYHIP_CALL_GUARDED(hipArrayCreate, (&m_array, &descr)); }
+//     public:
+//       array(const HIP_ARRAY_DESCRIPTOR &descr)
+//         : m_managed(true)
+//       { PYHIP_CALL_GUARDED(hipArrayCreate, (&m_array, &descr)); }
 
-      array(const HIP_ARRAY3D_DESCRIPTOR &descr)
-        : m_managed(true)
-      { PYHIP_CALL_GUARDED(hipArray3DCreate, (&m_array, &descr)); }
+//       array(const HIP_ARRAY3D_DESCRIPTOR &descr)
+//         : m_managed(true)
+//       { PYHIP_CALL_GUARDED(hipArray3DCreate, (&m_array, &descr)); }
 
-      array(hipArray ary, bool managed)
-        : m_array(ary), m_managed(managed)
-      { }
+//       array(hipArray ary, bool managed)
+//         : m_array(ary), m_managed(managed)
+//       { }
 
-      ~array()
-      { free(); }
+//       ~array()
+//       { free(); }
 
-      void free()
-      {
-        if (m_managed)
-        {
-          try
-          {
-            scoped_context_activation ca(get_context());
-            PYHIP_CALL_GUARDED_CLEANUP(hipArrayDestroy, (&m_array));
-          }
-          PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(array);
+//       void free()
+//       {
+//         if (m_managed)
+//         {
+//           try
+//           {
+//             scoped_context_activation ca(get_context());
+//             PYHIP_CALL_GUARDED_CLEANUP(hipArrayDestroy, (&m_array));
+//           }
+//           PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(array);
 
-          m_managed = false;
-          release_context();
-        }
-      }
+//           m_managed = false;
+//           release_context();
+//         }
+//       }
 
-      HIP_ARRAY_DESCRIPTOR get_descriptor()
-      {
-        HIP_ARRAY_DESCRIPTOR result;
-        PYHIP_CALL_GUARDED(hipArrayGetDescriptor, (&result, &m_array));
-        return result;
-      }
+//       HIP_ARRAY_DESCRIPTOR get_descriptor()
+//       {
+//         HIP_ARRAY_DESCRIPTOR result;
+//         PYHIP_CALL_GUARDED(hipArrayGetDescriptor, (&result, &m_array));
+//         return result;
+//       }
 
-      HIP_ARRAY3D_DESCRIPTOR get_descriptor_3d()
-      {
-        HIP_ARRAY3D_DESCRIPTOR result;
-        PYHIP_CALL_GUARDED(hipArray3DGetDescriptor, (&result, &m_array));
-        return result;
-      }
+//       HIP_ARRAY3D_DESCRIPTOR get_descriptor_3d()
+//       {
+//         HIP_ARRAY3D_DESCRIPTOR result;
+//         PYHIP_CALL_GUARDED(hipArray3DGetDescriptor, (&result, &m_array));
+//         return result;
+//       }
 
 
-      hipArray handle() const
-      { return m_array; }
+//       hipArray handle() const
+//       { return m_array; }
 
-    intptr_t handle_int() const
-    { return  (intptr_t) m_array; }
-  };
+//     intptr_t handle_int() const
+//     { return  (intptr_t) m_array; }
+//   };
 
   // }}}
 
