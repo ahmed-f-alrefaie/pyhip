@@ -107,7 +107,14 @@ typedef Py_ssize_t PYHIP_BUFFER_SIZE_T;
                   << std::endl; \
             }
 
-
+#define PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(TYPE) \
+  catch (pycuda::cannot_activate_out_of_thread_context) \
+  { } \
+  catch (pycuda::cannot_activate_dead_context) \
+  { \
+    /* PyErr_Warn( \
+        PyExc_UserWarning, #TYPE " in dead context was implicitly cleaned up");*/ \
+  }
 namespace pyhip
 {
 
