@@ -108,9 +108,9 @@ typedef Py_ssize_t PYHIP_BUFFER_SIZE_T;
             }
 
 #define PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(TYPE) \
-  catch (pycuda::cannot_activate_out_of_thread_context) \
+  catch (pyhip::cannot_activate_out_of_thread_context) \
   { } \
-  catch (pycuda::cannot_activate_dead_context) \
+  catch (pyhip::cannot_activate_dead_context) \
   { \
     /* PyErr_Warn( \
         PyExc_UserWarning, #TYPE " in dead context was implicitly cleaned up");*/ \
@@ -366,13 +366,13 @@ namespace pyhip
   class context : boost::noncopyable
   {
     protected:
-      hipContext_t m_context;
+      hipCtx_t m_context;
       bool m_valid;
       unsigned m_use_count;
       boost::thread::id m_thread;
 
     public:
-      context(hipContext_t ctx)
+      context(hipCtx_t ctx)
         : m_context(ctx), m_valid(true), m_use_count(1),
         m_thread(boost::this_thread::get_id())
       { }
@@ -389,7 +389,7 @@ namespace pyhip
         }
       }
 
-      hipContext_t handle() const
+      hipCtx_t handle() const
       { return m_context; }
 
       intptr_t handle_int() const
@@ -420,7 +420,7 @@ namespace pyhip
 
       static boost::shared_ptr<context> attach(unsigned int flags)
       {
-        hipContext_t current;
+        hipCtx_t current;
 
         // YHIP_CALL_GUARDED(hipCtxCreate, (&current, flags));
         // boost::shared_ptr<context> result(new context(current));
@@ -494,7 +494,7 @@ namespace pyhip
       {
         if (!context_stack::get().empty())
         {
-          hipContext_t popped;
+          hipCtx_t popped;
           PYHIP_CALL_GUARDED(hipCtxPopCurrent, (&popped));
         }
       }
@@ -573,7 +573,7 @@ namespace pyhip
 
       unsigned int get_api_version()
       {
-        unsigned int value;
+        int value;
         PYHIP_CALL_GUARDED(hipCtxGetApiVersion, (m_context, &value));
         return value;
       }
@@ -617,7 +617,7 @@ namespace pyhip
       hipDevice_t m_device;
 
     public:
-      primary_context(hipContext_t ctx, hipDevice_t dev)
+      primary_context(hipCtx_t ctx, hipDevice_t dev)
         : context (ctx), m_device(dev)
       { }
 
@@ -634,7 +634,7 @@ namespace pyhip
   {
     context::prepare_context_switch();
 
-    hipContext_t ctx;
+    hipCtx_t ctx;
     PYHIP_CALL_GUARDED_THREADED(hipCtxCreate, (&ctx, flags, m_device));
     boost::shared_ptr<context> result(new context(ctx));
     context_stack::get().push(result);
@@ -644,7 +644,7 @@ namespace pyhip
 
   inline boost::shared_ptr<context> device::retain_primary_context()
   {
-    hipContext_t ctx;
+    hipCtx_t ctx;
     PYHIP_CALL_GUARDED(hipDevicePrimaryCtxRetain, (&ctx, m_device));
     boost::shared_ptr<context> result(new primary_context(ctx, m_device));
     return result;
@@ -763,7 +763,9 @@ namespace pyhip
 
     public:
       stream(unsigned int flags=0)
-      { PYHIP_CALL_GUARDED(hipStreamCreate, (&m_stream, flags)); }
+      { 
+          PYHIP_CALL_GUARDED(hipStreamCreate, (&m_stream)); 
+      }
 
       ~stream()
       {
@@ -884,7 +886,7 @@ namespace pyhip
         try
         {
           scoped_context_activation ca(get_context());
-          PYHIP_CALL_GUARDED_CLEANUP(cuModuleUnload, (m_module));
+          PYHIP_CALL_GUARDED_CLEANUP(hipModuleUnload, (m_module));
         }
         PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(module);
       }
@@ -925,7 +927,7 @@ namespace pyhip
 
 
 
-      int get_attribute(CUfunction_attribute attr) const
+      int get_attribute(hipFunction_attribute attr) const
       {
         int result;
         PYHIP_CALL_GUARDED_WITH_TRACE_INFO(
