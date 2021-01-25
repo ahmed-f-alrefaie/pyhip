@@ -27,7 +27,7 @@
 
 typedef Py_ssize_t PYHIP_BUFFER_SIZE_T;
 
-#define PYCUDA_PARSE_STREAM_PY \
+#define PYHIP_PARSE_STREAM_PY \
     hipStream_t s_handle; \
     if (stream_py.ptr() != Py_None) \
     { \
@@ -682,7 +682,7 @@ namespace pyhip
         m_ward_context = context::current_context();
         if (m_ward_context.get() == 0)
           throw error("explicit_context_dependent",
-              CUDA_ERROR_INVALID_CONTEXT,
+              hipErrorInvalidContext,
               "no currently active context?");
       }
 
@@ -719,19 +719,19 @@ namespace pyhip
         : m_context(ctx)
       {
         if (!m_context->is_valid())
-          throw pycuda::cannot_activate_dead_context(
+          throw pyhip::cannot_activate_dead_context(
               "cannot activate dead context");
 
         m_did_switch = context::current_context() != m_context;
         if (m_did_switch)
         {
           if (boost::this_thread::get_id() != m_context->thread_id())
-            throw pycuda::cannot_activate_out_of_thread_context(
+            throw pyhip::cannot_activate_out_of_thread_context(
                 "cannot activate out-of-thread context");
 
           context_push(m_context);
 
-          throw pycuda::error("scoped_context_activation",hipErrorInvalidContext,
+          throw pyhip::error("scoped_context_activation",hipErrorInvalidContext,
               "not available in CUDA < 2.0");
 
         }
@@ -803,11 +803,11 @@ namespace pyhip
       bool m_managed;
 
     public:
-      array(const CUDA_ARRAY_DESCRIPTOR &descr)
+      array(const HIP_ARRAY_DESCRIPTOR &descr)
         : m_managed(true)
       { PYHIP_CALL_GUARDED(hipArrayCreate, (&m_array, &descr)); }
 
-      array(const CUDA_ARRAY3D_DESCRIPTOR &descr)
+      array(const HIP_ARRAY3D_DESCRIPTOR &descr)
         : m_managed(true)
       { PYHIP_CALL_GUARDED(hipArray3DCreate, (&m_array, &descr)); }
 
@@ -825,7 +825,7 @@ namespace pyhip
           try
           {
             scoped_context_activation ca(get_context());
-            PYHIP_CALL_GUARDED_CLEANUP(hipArrayDestroy, (m_array));
+            PYHIP_CALL_GUARDED_CLEANUP(hipArrayDestroy, (&m_array));
           }
           PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(array);
 
@@ -837,14 +837,14 @@ namespace pyhip
       HIP_ARRAY_DESCRIPTOR get_descriptor()
       {
         HIP_ARRAY_DESCRIPTOR result;
-        PYHIP_CALL_GUARDED(hipArrayGetDescriptor, (&result, m_array));
+        PYHIP_CALL_GUARDED(hipArrayGetDescriptor, (&result, &m_array));
         return result;
       }
 
       HIP_ARRAY3D_DESCRIPTOR get_descriptor_3d()
       {
         HIP_ARRAY3D_DESCRIPTOR result;
-        PYHIP_CALL_GUARDED(hipArray3DGetDescriptor, (&result, m_array));
+        PYHIP_CALL_GUARDED(hipArray3DGetDescriptor, (&result, &m_array));
         return result;
       }
 
@@ -949,7 +949,7 @@ namespace pyhip
 
         size_t gd_length = py::len(grid_dim_py);
         if (gd_length > axis_count)
-          throw pycuda::error("function::launch_kernel", hipErrorInvalidHandle,
+          throw pyhip::error("function::launch_kernel", hipErrorInvalidHandle,
               "too many grid dimensions in kernel launch");
 
         for (unsigned i = 0; i < gd_length; ++i)
@@ -957,13 +957,13 @@ namespace pyhip
 
         size_t bd_length = py::len(block_dim_py);
         if (bd_length > axis_count)
-          throw pycuda::error("function::launch_kernel", hipErrorInvalidHandle,
+          throw pyhip::error("function::launch_kernel", hipErrorInvalidHandle,
               "too many block dimensions in kernel launch");
 
         for (unsigned i = 0; i < bd_length; ++i)
           block_dim[i] = py::extract<unsigned>(block_dim_py[i]);
 
-        PYCUDA_PARSE_STREAM_PY;
+        PYHIP_PARSE_STREAM_PY;
 
         py_buffer_wrapper par_buf_wrapper;
         par_buf_wrapper.get(parameter_buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
