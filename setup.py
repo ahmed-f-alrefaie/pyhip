@@ -109,6 +109,15 @@ sources=['src/cpp/hip.cpp','src/cpp/bitlog.cpp','src/wrapper/wrap_hipdriv.cpp',]
                 #extra_link_args =['-static'],
                 include_dirs = [numpy_include,HIP['include'], python_lib[2], boost_lib[2],'src/cpp','src/wrapper'])
 
+ext_struct = Extension('pyhip._pvt_struct',
+sources=['src/wrapper/_pvt_struct_v3.cpp',],
+                library_dirs=[python_lib[1]],
+                libraries=[python_lib[0]],
+                runtime_library_dirs=[python_lib[1]],
+#                extra_compile_args=['-c','-fPIC'],
+                #extra_link_args =['-static'],
+                include_dirs = [numpy_include, python_lib[2]])
+
 def customize_compiler_for_hipcc(self):
 
     def _compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
