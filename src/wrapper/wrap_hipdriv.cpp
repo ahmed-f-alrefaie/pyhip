@@ -87,14 +87,14 @@ namespace
         }
 
         class pointer_holder_base_wrap
-        : public pointer_holder_base,
-        public py::wrapper<pointer_holder_base>
+           : public pointer_holder_base,
+          public py::wrapper<pointer_holder_base>
         {
-        public:
-        hipDeviceptr_t get_pointer() const
-        {
+           public:
+              DEV_PTR get_pointer() const
+             {
                 return this->get_override("get_pointer")();
-        }
+             }
         };
 
         py::tuple mem_alloc_pitch_wrap(
@@ -331,7 +331,7 @@ namespace
         #if defined(_WIN32) && defined(_WIN64)
                 return PyLong_FromUnsignedLongLong((unsigned long long) mo);
         #else
-                return PyLong_FromUnsignedLong((unsigned long) mo);
+                return PyLong_FromVoidPtr((hipDeviceptr_t) mo);
         #endif
         }
 
@@ -415,7 +415,7 @@ namespace
 
 
 
-        void pyhip_expose_tools();
+        //void pyhip_expose_tools();
 
         static bool import_numpy_helper()
         {
@@ -476,7 +476,7 @@ namespace
                 typedef device cl;
                 py::class_<cl>("Device", py::no_init)
                         .def("__init__", py::make_constructor(make_device))
-                        .def("__init__", py::make_constructor(make_device_from_pci_bus_id))
+                        //.def("__init__", py::make_constructor(make_device_from_pci_bus_id))
                         .DEF_SIMPLE_METHOD(count)
                         .staticmethod("count")
                         .DEF_SIMPLE_METHOD(name)
@@ -606,10 +606,10 @@ namespace
         typedef pointer_holder_base cl;
         py::class_<pointer_holder_base_wrap, boost::noncopyable>(
                 "PointerHolderBase")
-        .def("get_pointer", py::pure_virtual(&cl::get_pointer))
+       .def("get_pointer", py::pure_virtual(&cl::get_pointer))
         .def("as_buffer", &cl::as_buffer,
                 (py::arg("size"), py::arg("offset")=0))
-        .def("__int__", &cl::operator hipDeviceptr_t)
+        .def("__int__", &cl::operator DEV_PTR)
         .def("__long__", mem_obj_to_long<cl>)
         .def("__index__", mem_obj_to_long<cl>)
         ;
@@ -620,7 +620,7 @@ namespace
         {
         typedef device_allocation cl;
         py::class_<cl, boost::noncopyable>("DeviceAllocation", py::no_init)
-        .def("__int__", &cl::operator hipDeviceptr_t)
+        .def("__int__", &cl::operator DEV_PTR)
         .def("__long__", mem_obj_to_long<cl>)
         .def("__index__", mem_obj_to_long<cl>)
         .def("as_buffer", &cl::as_buffer,
@@ -630,7 +630,7 @@ namespace
 
         py::implicitly_convertible<device_allocation, hipDeviceptr_t>();
         }
-
+/*
 
         {
         typedef host_pointer cl;
@@ -686,7 +686,7 @@ namespace
         .def("unregister", &cl::free)
         ;
         }
-
+*/
 
         py::def("pagelocked_empty", numpy_empty<pagelocked_host_allocation>,
         (py::arg("shape"), py::arg("dtype"), py::arg("order")="C",
@@ -986,7 +986,7 @@ namespace
 
         // DEF_SIMPLE_FUNCTION(have_gl_ext);
 
-        pycuda_expose_tools();
+        //pyhip_expose_tools();
 
 
         }

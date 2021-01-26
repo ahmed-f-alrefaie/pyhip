@@ -27,6 +27,9 @@
 
 typedef Py_ssize_t PYHIP_BUFFER_SIZE_T;
 
+
+typedef unsigned long DEV_PTR;
+
 #define PYHIP_PARSE_STREAM_PY \
     hipStream_t s_handle; \
     if (stream_py.ptr() != Py_None) \
@@ -820,7 +823,7 @@ namespace pyhip
         : m_managed(true)
       { PYHIP_CALL_GUARDED(hipArray3DCreate, (&m_array, &descr)); }
 
-      array(hipArray_t ary, bool managed)
+      array(hiparray ary, bool managed)
         : m_array(ary), m_managed(managed)
       { }
 
@@ -834,7 +837,7 @@ namespace pyhip
           try
           {
             scoped_context_activation ca(get_context());
-//            PYHIP_CALL_GUARDED_CLEANUP(hipArrayDestroy, (m_array));
+            //PYHIP_CALL_GUARDED_CLEANUP(hipArrayDestroy, (m_array));
           }
           PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(array);
 
@@ -1012,53 +1015,115 @@ namespace pyhip
   }
 
 
+  inline
+      py::tuple mem_get_info()
+          {
+                      size_t free, total;
+                              PYHIP_CALL_GUARDED(hipMemGetInfo, (&free, &total));
+                                      return py::make_tuple(free, total);
+                                                              }
 
   inline
-    py::tuple mem_get_info()
-      {
-        size_t free, total;
-        PYHIP_CALL_GUARDED(hipMemGetInfo, (&free, &total));
-        return py::make_tuple(free, total);
-                        }
+      hipDeviceptr_t mem_alloc(size_t bytes)
+          {
+                            hipDeviceptr_t devptr;
+                                              PYHIP_CALL_GUARDED(hipMalloc, (&devptr, bytes));
+                                                                    return devptr;
+                                                                                            }
 
   inline
-    hipDeviceptr_t mem_alloc(size_t bytes)
-      {
-              hipDeviceptr_t devptr;
-                  PYHIP_CALL_GUARDED(hipMalloc, (&devptr, bytes));
-                      return devptr;
-                        }
-
-  inline
-    void mem_free(hipDeviceptr_t devptr)
-      {
-              PYHIP_CALL_GUARDED_CLEANUP(hipFree, (devptr));
-                }
-
-
+      void mem_free(hipDeviceptr_t devptr)
+          {
+                            PYHIP_CALL_GUARDED_CLEANUP(hipFree, (devptr));
+                                            }
 
 
     class pointer_holder_base
   {
     public:
       virtual ~pointer_holder_base() { }
-      virtual hipDeviceptr_t get_pointer() const = 0;
+      virtual DEV_PTR get_pointer() const = 0;
+
+      operator DEV_PTR() const
+      { return get_pointer(); }
+      
+
+     hipDeviceptr_t as_dev_ptr()
+     {
+          return reinterpret_cast<hipDeviceptr_t>(static_cast<intptr_t>(get_pointer()));
+     }
 
       operator hipDeviceptr_t() const
-      { return get_pointer(); }
+                { return reinterpret_cast<void *>(static_cast<intptr_t>(get_pointer())); }
 
       py::object as_buffer(size_t size, size_t offset)
       {
         return py::object(
             py::handle<>(
-              PyMemoryView_FromMemory((char *) (get_pointer()) + offset, size,
+              PyMemoryView_FromMemory((char*) as_dev_ptr()  + offset, size,
+                PyBUF_WRITE)
+              ));
+      }
+  };
+
+  class device_allocation : public boost::noncopyable, public context_dependent
+  {
+    private:
+      bool m_valid;
+
+    protected:
+      hipDeviceptr_t m_devptr;
+
+    public:
+      device_allocation(hipDeviceptr_t devptr): m_valid(true), m_devptr(devptr)
+      {}
+      device_allocation(DEV_PTR devptr)
+        : m_valid(true), m_devptr(reinterpret_cast<void *>(static_cast<intptr_t>(devptr)))
+      { }
+
+      void free()
+      {
+        if (m_valid)
+        {
+          try
+          {
+            scoped_context_activation ca(get_context());
+            mem_free(m_devptr);
+          }
+          PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(device_allocation);
+
+          release_context();
+          m_valid = false;
+        }
+        else
+          throw pyhip::error("device_allocation::free", hipErrorInvalidHandle);
+      }
+
+      ~device_allocation()
+      {
+        if (m_valid)
+          free();
+      }
+      
+      operator hipDeviceptr_t() const
+      { return m_devptr;}
+
+      operator DEV_PTR() const
+      { return static_cast<DEV_PTR>(reinterpret_cast<intptr_t>(m_devptr)); }
+
+      py::object as_buffer(size_t size, size_t offset)
+      {
+        return py::object(
+            py::handle<>(
+              //  PyMemoryView_FromMemory((char* ) + offset, size, 
+              PyMemoryView_FromMemory((char *) m_devptr + offset, size,
                 PyBUF_WRITE)
 
               ));
       }
   };
 
-
+/*
   class device_allocation : public boost::noncopyable, public context_dependent
   {
     private:
@@ -1104,13 +1169,13 @@ namespace pyhip
         return py::object(
             py::handle<>(
 
-              PyMemoryView_FromMemory((char *) (m_devptr) + offset, size,
+              PyMemoryView_FromMemory((char *) (m_devptr + offset), size,
                 PyBUF_WRITE)
 
               ));
       }
   };
-
+*/
   inline Py_ssize_t mem_alloc_pitch(
       std::auto_ptr<device_allocation> &da,
         unsigned int width, unsigned int height, unsigned int access_size)
