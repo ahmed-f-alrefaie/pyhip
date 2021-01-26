@@ -145,6 +145,6 @@ setup(name='pyhip',
         version='0.0.1',
         packages=packages,
         provides=provides,
-        ext_modules = [ext],
+        ext_modules = [ext, ext_struct],
 #        cmdclass={'build_ext': custom_build_ext},
         zip_safe=False)
