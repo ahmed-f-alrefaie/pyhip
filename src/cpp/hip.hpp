@@ -1246,13 +1246,13 @@ namespace pyhip
     void execute(bool aligned=false) const
     {
       if (aligned)
-      { PYHIP_CALL_GUARDED_THREADED(hipMemcpy2D, (this)); }
+      { PYHIP_CALL_GUARDED_THREADED(hipMemcpyParam2D, (this)); }
       else
-      { PYHIP_CALL_GUARDED_THREADED(hipMemcpy2DUnaligned, (this)); }
+      { PYHIP_CALL_GUARDED_THREADED(hipMemcpyParam2DUnaligned, (this)); }
     }
 
     void execute_async(const stream &s) const
-    { PYHIP_CALL_GUARDED_THREADED(hipMemcpy2DAsync, (this, s.handle())); }
+    { PYHIP_CALL_GUARDED_THREADED(hipMemcpyParam2DAsync, (this, s.handle())); }
   };
 
 
@@ -1267,11 +1267,11 @@ namespace pyhip
 
     void execute() const
     {
-      PYHIP_CALL_GUARDED_THREADED(hipMemcpy3D, (this));
+      PYHIP_CALL_GUARDED_THREADED(hipDrvMemcpy3D, (this));
     }
 
     void execute_async(const stream &s) const
-    { PYHIP_CALL_GUARDED_THREADED(hipMemcpy3DAsync, (this, s.handle())); }
+    { PYHIP_CALL_GUARDED_THREADED(hipDrvMemcpy3DAsync, (this, s.handle())); }
   };
 
 
@@ -1280,26 +1280,26 @@ namespace pyhip
   {
     void *m_data;
 
-    PYHIP_CALL_GUARDED(hipMemHostAlloc, (&m_data, size, flags));
+    PYHIP_CALL_GUARDED(hipHostMalloc, (&m_data, size, flags));
 
-    if (flags != 0)
+   /* if (flags != 0)
       throw pyhip::error("mem_host_alloc", hipErrorInvalidValue,
           "nonzero flags in mem_host_alloc not allowed in CUDA 2.1 and older");
-    PYHIP_CALL_GUARDED(hipMemAllocHost, (&m_data, size));
-
+    PYHIP_CALL_GUARDED(hipMallocHost, (&m_data, size));
+*/
     return m_data;
   }
 
   inline void mem_host_free(void *ptr)
   {
-    PYHIP_CALL_GUARDED_CLEANUP(hipMemFreeHost, (ptr));
+    PYHIP_CALL_GUARDED_CLEANUP(hipFreeHost, (ptr));
   }
 
 
   inline hipDeviceptr_t mem_managed_alloc(size_t size, unsigned flags=0)
   {
     hipDeviceptr_t m_data;
-    PYHIP_CALL_GUARDED(hipMemAllocManaged, (&m_data, size, flags));
+    PYHIP_CALL_GUARDED(hipMallocManaged, (&m_data, size, flags));
     return m_data;
   }
 
@@ -1307,13 +1307,13 @@ namespace pyhip
 
   inline void *mem_host_register(void *ptr, size_t bytes, unsigned int flags=0)
   {
-    PYHIP_CALL_GUARDED(hipMemHostRegister, (ptr, bytes, flags));
+    PYHIP_CALL_GUARDED(hipHostRegister, (ptr, bytes, flags));
     return ptr;
   }
 
   inline void mem_host_unregister(void *ptr)
   {
-    PYHIP_CALL_GUARDED_CLEANUP(hipMemHostUnregister, (ptr));
+    PYHIP_CALL_GUARDED_CLEANUP(hipHostUnregister, (ptr));
   }
 
 
@@ -1366,7 +1366,7 @@ namespace pyhip
       hipDeviceptr_t get_device_pointer()
       {
         hipDeviceptr_t result;
-        PYHIP_CALL_GUARDED(hipMemHostGetDevicePointer, (&result, m_data, 0));
+        PYHIP_CALL_GUARDED(hipHostGetDevicePointer, (&result, m_data, 0));
         return result;
       }
 
@@ -1409,7 +1409,7 @@ namespace pyhip
       unsigned int get_flags()
       {
         unsigned int flags;
-        PYHIP_CALL_GUARDED(hipMemHostGetFlags, (&flags, m_data));
+        PYHIP_CALL_GUARDED(hipHostGetFlags, (&flags, m_data));
         return flags;
       }
 
@@ -1466,7 +1466,7 @@ namespace pyhip
       {
         PYHIP_PARSE_STREAM_PY;
 
-        PYHIP_CALL_GUARDED(hipStreamAttachMemAsync, (s_handle, m_devptr, 0, flags));
+        PYHIP_CALL_GUARDED(hipStreamAttachMemAsync, (s_handle, &m_devptr, 0, flags));
       }
 
   };
@@ -1528,7 +1528,7 @@ namespace pyhip
 
     public:
       event(unsigned int flags=0)
-      { PYHIP_CALL_GUARDED(hipEventCreate, (&m_event, flags)); }
+      { PYHIP_CALL_GUARDED(hipEventCreate, (&m_event)); }
 
       event(hipEvent_t evt)
       : m_event(evt)
