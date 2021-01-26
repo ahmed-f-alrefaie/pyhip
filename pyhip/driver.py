@@ -33,8 +33,11 @@ def _add_hip_libdir_to_dll_path():
 
     #cuda_path = os.environ.get("HIP_PATH"
 
+try:
+    _add_hip_libdir_to_dll_path()
+except AttributeError:
+    pass
 
-_add_cuda_libdir_to_dll_path()
 
 try:
     from pyhip._driver import *  # noqa
