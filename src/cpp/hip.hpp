@@ -461,7 +461,7 @@ namespace pyhip
               // therefore this context has already been deleted. No need to harp
               // on the fact that we still thought there was cleanup to do.
 
-              // std::cerr << "PyCUDA WARNING: leaked out-of-thread context " << std::endl;
+              // std::cerr << "pyhip WARNING: leaked out-of-thread context " << std::endl;
             }
           }
 
@@ -666,7 +666,7 @@ namespace pyhip
     {
       std::cerr
         << "-------------------------------------------------------------------" << std::endl
-        << "PyCUDA ERROR: The context stack was not empty upon module cleanup." << std::endl
+        << "pyhip ERROR: The context stack was not empty upon module cleanup." << std::endl
         << "-------------------------------------------------------------------" << std::endl
         << "A context was still active when the context stack was being" << std::endl
         << "cleaned up. At this point in our execution, CUDA may already" << std::endl
@@ -1010,6 +1010,598 @@ namespace pyhip
     PYHIP_CALL_GUARDED(hipModuleGetFunction, (&func, m_module, name));
     return function(func, name);
   }
+
+
+    class pointer_holder_base
+  {
+    public:
+      virtual ~pointer_holder_base() { }
+      virtual hipDeviceptr_t get_pointer() const = 0;
+
+      operator hipDeviceptr_t() const
+      { return get_pointer(); }
+
+      py::object as_buffer(size_t size, size_t offset)
+      {
+        return py::object(
+            py::handle<>(
+#if PY_VERSION_HEX >= 0x03030000
+              PyMemoryView_FromMemory((char *) (get_pointer() + offset), size,
+                PyBUF_WRITE)
+#else /* Py2 */
+              PyBuffer_FromReadWriteMemory((void *) (get_pointer() + offset), size)
+#endif
+              ));
+      }
+  };
+
+  class device_allocation : public boost::noncopyable, public context_dependent
+  {
+    private:
+      bool m_valid;
+
+    protected:
+      hipDeviceptr_t m_devptr;
+
+    public:
+      device_allocation(hipDeviceptr_t devptr)
+        : m_valid(true), m_devptr(devptr)
+      { }
+
+      void free()
+      {
+        if (m_valid)
+        {
+          try
+          {
+            scoped_context_activation ca(get_context());
+            mem_free(m_devptr);
+          }
+          PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(device_allocation);
+
+          release_context();
+          m_valid = false;
+        }
+        else
+          throw pyhip::error("device_allocation::free", hipErrorInvalidHandle);
+      }
+
+      ~device_allocation()
+      {
+        if (m_valid)
+          free();
+      }
+
+      operator hipDeviceptr_t() const
+      { return m_devptr; }
+
+      py::object as_buffer(size_t size, size_t offset)
+      {
+        return py::object(
+            py::handle<>(
+              PyMemoryView_FromMemory((char *) (m_devptr + offset), size,
+                PyBUF_WRITE)
+
+              ));
+      }
+  };
+
+
+  class device_allocation : public boost::noncopyable, public context_dependent
+  {
+    private:
+      bool m_valid;
+
+    protected:
+     hipDeviceptr_t m_devptr;
+
+    public:
+      device_allocation(hipDeviceptr_t devptr)
+        : m_valid(true), m_devptr(devptr)
+      { }
+
+      void free()
+      {
+        if (m_valid)
+        {
+          try
+          {
+            scoped_context_activation ca(get_context());
+            mem_free(m_devptr);
+          }
+          PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(device_allocation);
+
+          release_context();
+          m_valid = false;
+        }
+        else
+          throw pyhip::error("device_allocation::free", hipErrorInvalidHandle);
+      }
+
+      ~device_allocation()
+      {
+        if (m_valid)
+          free();
+      }
+
+      operator hipDeviceptr_t() const
+      { return m_devptr; }
+
+      py::object as_buffer(size_t size, size_t offset)
+      {
+        return py::object(
+            py::handle<>(
+
+              PyMemoryView_FromMemory((char *) (m_devptr + offset), size,
+                PyBUF_WRITE)
+
+              ));
+      }
+  };
+
+  inline Py_ssize_t mem_alloc_pitch(
+      std::auto_ptr<device_allocation> &da,
+        unsigned int width, unsigned int height, unsigned int access_size)
+  {
+    hipDeviceptr_t devptr;
+    size_t pitch;
+    PYHIP_CALL_GUARDED(hipMemAllocPitch, (&devptr, &pitch, width, height, access_size));
+    da = std::auto_ptr<device_allocation>(new device_allocation(devptr));
+    return pitch;
+  }
+
+  inline
+  py::tuple mem_get_address_range(hipDeviceptr_t ptr)
+  {
+    hipDeviceptr_t base;
+    size_t size;
+    PYHIP_CALL_GUARDED(hipMemGetAddressRange, (&base, &size, ptr));
+    return py::make_tuple(base, size);
+  }
+
+  inline
+  void memcpy_dtoa(array const &ary, unsigned int index, hipDeviceptr_t src, unsigned int len)
+  { PYHIP_CALL_GUARDED_THREADED(hipMemcpyDtoA, (ary.handle(), index, src, len)); }
+
+  inline
+  void memcpy_atod(hipDeviceptr_t dst, array const &ary, unsigned int index, unsigned int len)
+  { PYHIP_CALL_GUARDED_THREADED(hipMemcpyAtoD, (dst, ary.handle(), index, len)); }
+
+  inline
+  void memcpy_atoa(
+      array const &dst, unsigned int dst_index,
+      array const &src, unsigned int src_index,
+      unsigned int len)
+  { PYHIP_CALL_GUARDED_THREADED(hipMemcpyAtoA, (dst.handle(), dst_index, src.handle(), src_index, len)); }
+
+
+#define MEMCPY_SETTERS \
+    void set_src_host(py::object buf_py) \
+    { \
+      srcMemoryType = hipMemoryTypeHost; \
+      py_buffer_wrapper buf_wrapper; \
+      buf_wrapper.get(buf_py.ptr(), PyBUF_STRIDED_RO); \
+      srcHost = buf_wrapper.m_buf.buf; \
+    } \
+    \
+    void set_src_array(array const &ary)  \
+    {  \
+      srcMemoryType = hipMemoryTypeArray; \
+      srcArray = ary.handle();  \
+    } \
+    \
+    void set_src_device(hipDeviceptr_t devptr)  \
+    { \
+      srcMemoryType = hipMemoryTypeDevice; \
+      srcDevice = devptr; \
+    } \
+    \
+    void set_dst_host(py::object buf_py) \
+    { \
+      dstMemoryType = hipMemoryTypeHost; \
+      py_buffer_wrapper buf_wrapper; \
+      buf_wrapper.get(buf_py.ptr(), PyBUF_STRIDED); \
+      dstHost = buf_wrapper.m_buf.buf; \
+    } \
+    \
+    void set_dst_array(array const &ary) \
+    { \
+      dstMemoryType = hipMemoryTypeArray; \
+      dstArray = ary.handle(); \
+    } \
+    \
+    void set_dst_device(hipDeviceptr_t devptr)  \
+    { \
+      dstMemoryType = hipMemoryTypeDevice; \
+      dstDevice = devptr; \
+    }
+
+
+#define MEMCPY_SETTERS_UNIFIED \
+    void set_src_unified(py::object buf_py) \
+    { \
+      srcMemoryType = hipMemoryTypeUnified; \
+      py_buffer_wrapper buf_wrapper; \
+      buf_wrapper.get(buf_py.ptr(), PyBUF_ANY_CONTIGUOUS); \
+      srcHost = buf_wrapper.m_buf.buf; \
+    } \
+    \
+    void set_dst_unified(py::object buf_py) \
+    { \
+      dstMemoryType = hipMemoryTypeUnified; \
+      py_buffer_wrapper buf_wrapper; \
+      buf_wrapper.get(buf_py.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE); \
+      dstHost = buf_wrapper.m_buf.buf; \
+    }
+
+  struct memcpy_2d : public hip_Memcpy2D
+  {
+    memcpy_2d() : hip_Memcpy2D()
+    {
+    }
+
+    MEMCPY_SETTERS;
+    MEMCPY_SETTERS_UNIFIED;
+
+    void execute(bool aligned=false) const
+    {
+      if (aligned)
+      { PYHIP_CALL_GUARDED_THREADED(hipMemcpy2D, (this)); }
+      else
+      { PYHIP_CALL_GUARDED_THREADED(hipMemcpy2DUnaligned, (this)); }
+    }
+
+    void execute_async(const stream &s) const
+    { PYHIP_CALL_GUARDED_THREADED(hipMemcpy2DAsync, (this, s.handle())); }
+  };
+
+
+  struct memcpy_3d : public HIP_MEMCPY3D
+  {
+    memcpy_3d() : HIP_MEMCPY3D()
+    {
+    }
+
+    MEMCPY_SETTERS;
+    MEMCPY_SETTERS_UNIFIED;
+
+    void execute() const
+    {
+      PYHIP_CALL_GUARDED_THREADED(hipMemcpy3D, (this));
+    }
+
+    void execute_async(const stream &s) const
+    { PYHIP_CALL_GUARDED_THREADED(hipMemcpy3DAsync, (this, s.handle())); }
+  };
+
+
+  // {{{ host memory
+  inline void *mem_host_alloc(size_t size, unsigned flags=0)
+  {
+    void *m_data;
+
+    PYHIP_CALL_GUARDED(hipMemHostAlloc, (&m_data, size, flags));
+
+    if (flags != 0)
+      throw pyhip::error("mem_host_alloc", hipErrorInvalidValue,
+          "nonzero flags in mem_host_alloc not allowed in CUDA 2.1 and older");
+    PYHIP_CALL_GUARDED(hipMemAllocHost, (&m_data, size));
+
+    return m_data;
+  }
+
+  inline void mem_host_free(void *ptr)
+  {
+    PYHIP_CALL_GUARDED_CLEANUP(hipMemFreeHost, (ptr));
+  }
+
+
+  inline hipDeviceptr_t mem_managed_alloc(size_t size, unsigned flags=0)
+  {
+    hipDeviceptr_t m_data;
+    PYHIP_CALL_GUARDED(hipMemAllocManaged, (&m_data, size, flags));
+    return m_data;
+  }
+
+
+
+  inline void *mem_host_register(void *ptr, size_t bytes, unsigned int flags=0)
+  {
+    PYHIP_CALL_GUARDED(hipMemHostRegister, (ptr, bytes, flags));
+    return ptr;
+  }
+
+  inline void mem_host_unregister(void *ptr)
+  {
+    PYHIP_CALL_GUARDED_CLEANUP(hipMemHostUnregister, (ptr));
+  }
+
+
+  inline void *aligned_malloc(size_t size, size_t alignment, void **original_pointer)
+  {
+    // alignment must be a power of two.
+    if ((alignment & (alignment - 1)) != 0)
+      throw pyhip::error("aligned_malloc", hipErrorInvalidValue,
+          "alignment must be a power of two");
+
+    if (alignment == 0)
+      throw pyhip::error("aligned_malloc", hipErrorInvalidValue,
+          "alignment must non-zero");
+
+    void *p = malloc(size + (alignment - 1));
+    if (!p)
+      throw pyhip::error("aligned_malloc", hipErrorOutOfMemory,
+          "aligned malloc failed");
+
+    *original_pointer = p;
+
+    p = (void *)((((ptrdiff_t)(p)) + (alignment-1)) & -alignment);
+    return p;
+  }
+
+
+
+  struct host_pointer : public boost::noncopyable, public context_dependent
+  {
+    protected:
+      bool m_valid;
+      void *m_data;
+
+    public:
+      host_pointer()
+        : m_valid(false)
+      { }
+
+      host_pointer(void *ptr)
+        : m_valid(true), m_data(ptr)
+      { }
+
+      virtual ~host_pointer()
+      { }
+
+      void *data()
+      { return m_data; }
+
+
+      hipDeviceptr_t get_device_pointer()
+      {
+        hipDeviceptr_t result;
+        PYHIP_CALL_GUARDED(hipMemHostGetDevicePointer, (&result, m_data, 0));
+        return result;
+      }
+
+  };
+
+  struct pagelocked_host_allocation : public host_pointer
+  {
+    public:
+      pagelocked_host_allocation(size_t bytesize, unsigned flags=0)
+        : host_pointer(mem_host_alloc(bytesize, flags))
+      { }
+
+      /* Don't try to be clever and coalesce these in the base class.
+       * Won't work: Destructors may not call virtual functions.
+       */
+      ~pagelocked_host_allocation()
+      {
+        if (m_valid)
+          free();
+      }
+
+      void free()
+      {
+        if (m_valid)
+        {
+          try
+          {
+            scoped_context_activation ca(get_context());
+            mem_host_free(m_data);
+          }
+          PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(pagelocked_host_allocation);
+
+          release_context();
+          m_valid = false;
+        }
+        else
+          throw pyhip::error("pagelocked_host_allocation::free", hipErrorInvalidHandle);
+      }
+
+      unsigned int get_flags()
+      {
+        unsigned int flags;
+        PYHIP_CALL_GUARDED(hipMemHostGetFlags, (&flags, m_data));
+        return flags;
+      }
+
+  };
+
+  struct aligned_host_allocation : public host_pointer
+  {
+      void *m_original_pointer;
+
+    public:
+      aligned_host_allocation(size_t size, size_t alignment)
+        : host_pointer(aligned_malloc(size, alignment, &m_original_pointer))
+      { }
+
+      /* Don't try to be clever and coalesce these in the base class.
+       * Won't work: Destructors may not call virtual functions.
+       */
+      ~aligned_host_allocation()
+      {
+        if (m_valid)
+          free();
+      }
+
+      void free()
+      {
+        if (m_valid)
+        {
+          ::free(m_original_pointer);
+          m_valid = false;
+        }
+        else
+          throw pyhip::error("aligned_host_allocation::free", hipErrorInvalidHandle);
+      }
+  };
+
+
+  struct managed_allocation : public device_allocation
+  {
+    public:
+      managed_allocation(size_t bytesize, unsigned flags=0)
+        : device_allocation(mem_managed_alloc(bytesize, flags))
+      { }
+
+      // The device pointer is also valid on the host
+      void *data()
+      { return (void *) m_devptr; }
+
+      hipDeviceptr_t get_device_pointer()
+      {
+        return m_devptr;
+      }
+
+      void attach(unsigned flags, py::object stream_py)
+      {
+        PYHIP_PARSE_STREAM_PY;
+
+        PYHIP_CALL_GUARDED(hipStreamAttachMemAsync, (s_handle, m_devptr, 0, flags));
+      }
+
+  };
+
+
+
+  struct registered_host_memory : public host_pointer
+  {
+    private:
+      py::object m_base;
+
+    public:
+      registered_host_memory(void *p, size_t bytes, unsigned int flags=0,
+          py::object base=py::object())
+        : host_pointer(mem_host_register(p, bytes, flags)), m_base(base)
+      {
+      }
+
+      /* Don't try to be clever and coalesce these in the base class.
+       * Won't work: Destructors may not call virtual functions.
+       */
+      ~registered_host_memory()
+      {
+        if (m_valid)
+          free();
+      }
+
+      void free()
+      {
+        if (m_valid)
+        {
+          try
+          {
+            scoped_context_activation ca(get_context());
+            mem_host_unregister(m_data);
+          }
+          PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(host_allocation);
+
+          release_context();
+          m_valid = false;
+        }
+        else
+          throw pyhip::error("registered_host_memory::free", hipErrorInvalidHandle);
+      }
+
+      py::object base() const
+      {
+        return m_base;
+      }
+  };
+
+  // }}}
+
+  // {{{ event
+  class event : public boost::noncopyable, public context_dependent
+  {
+    private:
+      hipEvent_t m_event;
+
+    public:
+      event(unsigned int flags=0)
+      { PYHIP_CALL_GUARDED(hipEventCreate, (&m_event, flags)); }
+
+      event(hipEvent_t evt)
+      : m_event(evt)
+      { }
+
+      ~event()
+      {
+        try
+        {
+          scoped_context_activation ca(get_context());
+          PYHIP_CALL_GUARDED_CLEANUP(hipEventDestroy, (m_event));
+        }
+        PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(event);
+      }
+
+      event *record(py::object stream_py)
+      {
+        PYHIP_PARSE_STREAM_PY;
+
+        PYHIP_CALL_GUARDED(hipEventRecord, (m_event, s_handle));
+        return this;
+      }
+
+      hipEvent_t handle() const
+      { return m_event; }
+
+      event *synchronize()
+      {
+        PYHIP_CALL_GUARDED_THREADED(hipEventSynchronize, (m_event));
+        return this;
+      }
+
+      bool query() const
+      {
+        PYHIP_PRINT_CALL_TRACE("hipEventQuery");
+
+        hipError_t result = hipEventQuery(m_event);
+        switch (result)
+        {
+          case hipSuccess:
+            return true;
+          case hipErrorNotReady:
+            return false;
+          default:
+            PYHIP_PRINT_ERROR_TRACE("hipEventQuery", result);
+            throw error("hipEventQuery", result);
+        }
+      }
+
+      float time_since(event const &start)
+      {
+        float result;
+        PYHIP_CALL_GUARDED(hipEventElapsedTime, (&result, start.m_event, m_event));
+        return result;
+      }
+
+      float time_till(event const &end)
+      {
+        float result;
+        PYHIP_CALL_GUARDED(hipEventElapsedTime, (&result, m_event, end.m_event));
+        return result;
+      }
+
+
+  };
+
+
+  inline void stream::wait_for_event(const event &evt)
+  {
+    PYHIP_CALL_GUARDED(hipStreamWaitEvent, (m_stream, evt.handle(), 0));
+  }
+
+
 
 
 }
