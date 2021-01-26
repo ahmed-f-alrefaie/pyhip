@@ -447,25 +447,258 @@ namespace
                         }
 
 
-                py::enum_<unsigned int>("ctx_flags")
-                .value("SCHED_AUTO", hipDeviceScheduleAuto)
-                .value("SCHED_SPIN", hipDeviceScheduleSpin)
-                .value("SCHED_YIELD", hipDeviceScheduleYield)
-                .value("SCHED_MASK", hipDeviceScheduleMask)
 
-                .value("BLOCKING_SYNC", hipDeviceScheduleBlockingSync)
-                .value("SCHED_BLOCKING_SYNC", hipDeviceScheduleBlockingSync)
+  py::enum_<CUctx_flags>("ctx_flags")
+    .value("SCHED_AUTO", hipDeviceScheduleAuto)
+    .value("SCHED_SPIN", hipDeviceScheduleSpin)
+    .value("SCHED_YIELD", hipDeviceScheduleYield)
+    .value("SCHED_MASK", hipDeviceScheduleMask)
 
-                .value("BLOCKING_SYNC", hipDeviceScheduleBlockingSync)
-                .value("SCHED_BLOCKING_SYNC", hipDeviceScheduleBlockingSync)
+    .value("BLOCKING_SYNC", hipDeviceScheduleBlockingSync)
+    .value("SCHED_BLOCKING_SYNC", hipDeviceScheduleBlockingSync)
 
 
-                .value("MAP_HOST", hipDeviceMapHost)
+    .value("BLOCKING_SYNC", hipDeviceScheduleBlockingSync)
+    .value("SCHED_BLOCKING_SYNC", hipDeviceScheduleBlockingSync)
 
-                .value("LMEM_RESIZE_TO_MAX", hipDeviceLmemResizeToMax)
 
-                // .value("FLAGS_MASK", CU_CTX_FLAGS_MASK)
-                ;
+    .value("MAP_HOST", hipDeviceMapHost)
+
+
+    .value("LMEM_RESIZE_TO_MAX", hipDeviceLmemResizeToMax)
+
+    ;
+
+
+
+  py::enum_<CUevent_flags>("event_flags")
+    .value("DEFAULT", hipEventDefault)
+    .value("BLOCKING_SYNC", hipEventBlockingSync)
+
+    .value("DISABLE_TIMING", hipEventDisableTiming)
+
+
+    .value("INTERPROCESS", hipEventInterprocess)
+
+    ;
+
+
+  py::enum_<hipArray_format>("array_format")
+    .value("UNSIGNED_INT8", HIP_AD_FORMAT_UNSIGNED_INT8)
+    .value("UNSIGNED_INT16", HIP_AD_FORMAT_UNSIGNED_INT16)
+    .value("UNSIGNED_INT32", HIP_AD_FORMAT_UNSIGNED_INT32)
+    .value("SIGNED_INT8"   , HIP_AD_FORMAT_SIGNED_INT8)
+    .value("SIGNED_INT16"  , HIP_AD_FORMAT_SIGNED_INT16)
+    .value("SIGNED_INT32"  , HIP_AD_FORMAT_SIGNED_INT32)
+    .value("HALF"          , HIP_AD_FORMAT_HALF)
+    .value("FLOAT"         , HIP_AD_FORMAT_FLOAT)
+    ;
+
+
+  {
+    py::class_<array3d_flags> cls("array3d_flags", py::no_init);
+    // deprecated
+
+
+    cls.attr("ARRAY3D_LAYERED") = hipArrayLayered;
+
+
+
+    cls.attr("SURFACE_LDST") = hipArraySurfaceLoadStore;
+
+
+    cls.attr("CUBEMAP") = hipArrayCubemap;
+    cls.attr("TEXTURE_GATHER") = hipArrayTextureGather;
+
+  }
+
+
+  py::enum_<hipTextureAddressMode>("address_mode")
+    .value("WRAP", hipAddressModeWrap)
+    .value("CLAMP", hipAddressModeClamp)
+    .value("MIRROR", hipAddressModeMirror)
+
+    .value("BORDER", hipAddressModeBorder)
+
+    ;
+
+  py::enum_<hipTextureFilterMode>("filter_mode")
+    .value("POINT", hipFilterModePoint)
+    .value("LINEAR", hipFilterModeLinear)
+    ;
+  py::enum_<hipDeviceAttribute_t>("device_attribute")
+    .value("MAX_THREADS_PER_BLOCK", hipDeviceAttributeMaxThreadsPerBlock)
+    .value("MAX_BLOCK_DIM_X", hipDeviceAttributeMaxBlockDimX)
+    .value("MAX_BLOCK_DIM_Y", hipDeviceAttributeMaxBlockDimY)
+    .value("MAX_BLOCK_DIM_Z", hipDeviceAttributeMaxBlockDimZ)
+    .value("MAX_GRID_DIM_X", hipDeviceAttributeMaxGridDimX)
+    .value("MAX_GRID_DIM_Y", hipDeviceAttributeMaxGridDimY)
+    .value("MAX_GRID_DIM_Z", hipDeviceAttributeMaxGridDimZ)
+
+    .value("MAX_SHARED_MEMORY_PER_BLOCK", hipDeviceAttributeMaxSharedMemoryPerBlock)
+
+    .value("SHARED_MEMORY_PER_BLOCK", hipDeviceAttributeMaxSharedMemoryPerBlock)
+    .value("TOTAL_CONSTANT_MEMORY", hipDeviceAttributeTotalConstantMemory)
+    .value("WARP_SIZE", hipDeviceAttributeWarpSize)
+    .value("MAX_PITCH", hipDeviceAttributeMaxPitch)
+
+    .value("MAX_REGISTERS_PER_BLOCK", hipDeviceAttributeMaxRegistersPerBlock)
+
+    .value("REGISTERS_PER_BLOCK", hipDeviceAttributeMaxRegistersPerBlock)
+    .value("CLOCK_RATE", hipDeviceAttributeClockRate)
+    .value("TEXTURE_ALIGNMENT", hipDeviceAttributeTextureAlignment)
+
+
+    .value("MULTIPROCESSOR_COUNT", hipDeviceAttributeMultiprocessorCount)
+
+
+    .value("KERNEL_EXEC_TIMEOUT", hipDeviceAttributeKernelExecTimeout)
+    .value("INTEGRATED", hipDeviceAttributeIntegrated)
+    .value("CAN_MAP_HOST_MEMORY", hipDeviceAttributeCanMapHostMemory)
+    .value("COMPUTE_MODE", hipDeviceAttributeComputeMode)
+
+
+    .value("MAXIMUM_TEXTURE1D_WIDTH", hipDeviceAttributeMaxTexture1DWidth)
+    .value("MAXIMUM_TEXTURE2D_WIDTH", hipDeviceAttributeMaxTexture2DWidth)
+    .value("MAXIMUM_TEXTURE2D_HEIGHT", hipDeviceAttributeMaxTexture2DHeight)
+    .value("MAXIMUM_TEXTURE3D_WIDTH", hipDeviceAttributeMaxTexture3DWidth)
+    .value("MAXIMUM_TEXTURE3D_HEIGHT", hipDeviceAttributeMaxTexture3DHeight)
+    .value("MAXIMUM_TEXTURE3D_DEPTH", hipDeviceAttributeMaxTexture3DDepth)
+
+    .value("CONCURRENT_KERNELS", hipDeviceAttributeConcurrentKernels)
+    .value("ECC_ENABLED", hipDeviceAttributeEccEnabled)
+
+
+
+
+
+    .value("PCI_BUS_ID", hipDeviceAttributePciBusId)
+    .value("PCI_DEVICE_ID", hipDeviceAttributePciDeviceId)
+
+
+    .value("MEMORY_CLOCK_RATE", hipDeviceAttributeMemoryClockRate)
+    .value("GLOBAL_MEMORY_BUS_WIDTH", hipDeviceAttributeMemoryBusWidth)
+    .value("L2_CACHE_SIZE", hipDeviceAttributeL2CacheSize)
+    .value("MAX_THREADS_PER_MULTIPROCESSOR", hipDeviceAttributeMaxThreadsPerMultiProcessor)
+
+
+
+
+    .value("COMPUTE_CAPABILITY_MAJOR", hipDeviceAttributeComputeCapabilityMajor)
+    .value("COMPUTE_CAPABILITY_MINOR", hipDeviceAttributeComputeCapabilityMinor)
+
+
+
+
+    .value("MAX_SHARED_MEMORY_PER_MULTIPROCESSOR", hipDeviceAttributeMaxSharedMemoryPerMultiprocessor)
+    .value("MULTI_GPU_BOARD", hipDeviceAttributeIsMultiGpuBoard)
+
+    ;
+
+
+
+  py::enum_<hipFuncCache_t>("func_cache")
+    .value("PREFER_NONE", hipFuncCachePreferNone)
+    .value("PREFER_SHARED", hipFuncCachePreferShared)
+    .value("PREFER_L1", hipFuncCachePreferL1)
+
+    .value("PREFER_EQUAL", hipFuncCachePreferEqual)
+
+    ;
+
+
+
+  py::enum_<hipSharedMemConfig>("shared_config")
+    .value("DEFAULT_BANK_SIZE", hipSharedMemBankSizeDefault)
+    .value("FOUR_BYTE_BANK_SIZE", hipSharedMemBankSizeFourByte)
+    .value("EIGHT_BYTE_BANK_SIZE", hipSharedMemBankSizeEightByte)
+    ;
+
+
+
+  py::enum_<hipFunction_attribute>("function_attribute")
+    .value("MAX_THREADS_PER_BLOCK", HIP_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK)
+    .value("SHARED_SIZE_BYTES", HIP_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES)
+    .value("CONST_SIZE_BYTES", HIP_FUNC_ATTRIBUTE_CONST_SIZE_BYTES)
+    .value("LOCAL_SIZE_BYTES", HIP_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES)
+    .value("NUM_REGS", HIP_FUNC_ATTRIBUTE_NUM_REGS)
+
+    .value("PTX_VERSION", HIP_FUNC_ATTRIBUTE_PTX_VERSION)
+    .value("BINARY_VERSION", HIP_FUNC_ATTRIBUTE_BINARY_VERSION)
+
+    .value("MAX", HIP_FUNC_ATTRIBUTE_MAX)
+    ;
+
+
+  py::enum_<hipMemoryType>("memory_type")
+    .value("HOST", hipMemoryTypeHost)
+    .value("DEVICE", hipMemoryTypeDevice)
+    .value("ARRAY", hipMemoryTypeArray)
+
+    .value("UNIFIED", hipMemoryTypeUnified)
+
+    ;
+
+
+  py::enum_<hipComputeMode>("compute_mode")
+    .value("DEFAULT", hipComputeModeDefault)
+
+    .value("EXCLUSIVE", hipComputeModeExclusive)
+
+    .value("PROHIBITED", hipComputeModeProhibited)
+
+    .value("EXCLUSIVE_PROCESS", hipComputeModeExclusiveProcess)
+
+    ;
+
+
+
+  py::enum_<hipJitOption>("jit_option")
+    .value("MAX_REGISTERS", hipJitOptionMaxRegisters)
+    .value("THREADS_PER_BLOCK", hipJitOptionThreadsPerBlock)
+    .value("WALL_TIME", hipJitOptionWallTime)
+    .value("INFO_LOG_BUFFER", hipJitOptionInfoLogBuffer)
+    .value("INFO_LOG_BUFFER_SIZE_BYTES", hipJitOptionInfoLogBufferSizeBytes)
+    .value("ERROR_LOG_BUFFER", hipJitOptionErrorLogBuffer)
+    .value("ERROR_LOG_BUFFER_SIZE_BYTES", hipJitOptionErrorLogBufferSizeBytes)
+    .value("OPTIMIZATION_LEVEL", hipJitOptionOptimizationLevel)
+    .value("TARGET_FROM_CUCONTEXT", hipJitOptionTargetFromContext)
+    .value("TARGET", hipJitOptionTarget)
+    .value("FALLBACK_STRATEGY", hipJitOptionFallbackStrategy)
+    ;
+
+
+
+  {
+    py::class_<host_alloc_flags> cls("host_alloc_flags", py::no_init);
+    cls.attr("PORTABLE") = hipHostMallocPortable;
+    cls.attr("DEVICEMAP") = hipHostMallocMapped;
+    cls.attr("WRITECOMBINED") = hipHostMallocWriteCombined;
+  }
+
+
+
+  {
+    py::class_<mem_host_register_flags> cls("mem_host_register_flags", py::no_init);
+    cls.attr("PORTABLE") = hipHostRegisterPortable;
+    cls.attr("DEVICEMAP") = hipHostRegisterMapped;
+  }
+
+
+
+  py::enum_<hipLimit_t>("limit")
+
+    .value("MALLOC_HEAP_SIZE", hipLimitMallocHeapSize)
+
+
+
+    ;
+
+
+
+
+
+
 
 
                 py::def("init", init,
