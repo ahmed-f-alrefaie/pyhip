@@ -448,7 +448,7 @@ namespace
 
 
 
-  py::enum_<CUctx_flags>("ctx_flags")
+  py::enum_<unsigned int>("ctx_flags")
     .value("SCHED_AUTO", hipDeviceScheduleAuto)
     .value("SCHED_SPIN", hipDeviceScheduleSpin)
     .value("SCHED_YIELD", hipDeviceScheduleYield)
@@ -470,8 +470,8 @@ namespace
     ;
 
 
-
-  py::enum_<CUevent_flags>("event_flags")
+/*
+  py::enum_<unsigned int>("event_flags")
     .value("DEFAULT", hipEventDefault)
     .value("BLOCKING_SYNC", hipEventBlockingSync)
 
@@ -482,8 +482,8 @@ namespace
 
     ;
 
-
-  py::enum_<hipArray_format>("array_format")
+*/
+  py::enum_<hipArray_Format>("array_format")
     .value("UNSIGNED_INT8", HIP_AD_FORMAT_UNSIGNED_INT8)
     .value("UNSIGNED_INT16", HIP_AD_FORMAT_UNSIGNED_INT16)
     .value("UNSIGNED_INT32", HIP_AD_FORMAT_UNSIGNED_INT32)
@@ -495,7 +495,7 @@ namespace
     ;
 
 
-  {
+  /*{
     py::class_<array3d_flags> cls("array3d_flags", py::no_init);
     // deprecated
 
@@ -510,7 +510,7 @@ namespace
     cls.attr("CUBEMAP") = hipArrayCubemap;
     cls.attr("TEXTURE_GATHER") = hipArrayTextureGather;
 
-  }
+  }*/
 
 
   py::enum_<hipTextureAddressMode>("address_mode")
