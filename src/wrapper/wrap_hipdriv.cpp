@@ -24,7 +24,10 @@ namespace
         HipRuntimeError,
         HipLaunchError;
 
-
+        hipDeviceptr_t convert_devptr(DEV_PTR ptr)
+        {
+                return reinterpret_cast<hipDeviceptr_t>(static_cast<intptr_t>(ptr))
+        }
 
 
         void translate_hip_error(const pyhip::error &err)
@@ -67,6 +70,8 @@ namespace
 
         class host_alloc_flags { };
         class mem_host_register_flags { };
+        
+
 
 
         // {{{ "python-aware" wrappers
@@ -109,83 +114,83 @@ namespace
 
         // {{{ memory set
 
-        void  py_memset_d8(hipDeviceptr_t dst, unsigned char uc, size_t n )
-        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD8, (dst, uc, n )); }
-        void  py_memset_d16(hipDeviceptr_t dst, unsigned short us, size_t n )
-        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD16, (dst, us, n )); }
-        void  py_memset_d32(hipDeviceptr_t dst, unsigned int ui, size_t n )
-        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD32, (dst, ui, n )); }
+        void  py_memset_d8(DEV_PTR dst, unsigned char uc, size_t n )
+        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD8, (convert_devptr(dst), uc, n )); }
+        void  py_memset_d16(DEV_PTR dst, unsigned short us, size_t n )
+        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD16, (convert_devptr(dst), us, n )); }
+        void  py_memset_d32(DEV_PTR dst, unsigned int ui, size_t n )
+        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD32, (convert_devptr(dst), ui, n )); }
 
- /*       void  py_memset_d2d8(hipDeviceptr_t dst, size_t dst_pitch,
+ /*       void  py_memset_d2d8(DEV_PTR dst, size_t dst_pitch,
         unsigned char uc, size_t width, size_t height )
-        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D8, (dst, dst_pitch, uc, width, height)); }
+        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D8, (convert_devptr(dst), dst_pitch, uc, width, height)); }
 
-        void  py_memset_d2d16(hipDeviceptr_t dst, size_t dst_pitch,
+        void  py_memset_d2d16(DEV_PTR dst, size_t dst_pitch,
         unsigned short us, size_t width, size_t height )
-        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D16, (dst, dst_pitch, us, width, height)); }
+        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D16, (convert_devptr(dst), dst_pitch, us, width, height)); }
 
-        void  py_memset_d2d32(hipDeviceptr_t dst, size_t dst_pitch,
+        void  py_memset_d2d32(DEV_PTR dst, size_t dst_pitch,
         unsigned int ui, size_t width, size_t height )
-        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D32, (dst, dst_pitch, ui, width, height)); }
+        { PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D32, (convert_devptr(dst), dst_pitch, ui, width, height)); }
 */
         // }}}
 
         // {{{ memory set async
 
-        void  py_memset_d8_async(hipDeviceptr_t dst, unsigned char uc, size_t n, py::object stream_py )
+        void  py_memset_d8_async(DEV_PTR dst, unsigned char uc, size_t n, py::object stream_py )
         {
         PYHIP_PARSE_STREAM_PY;
-        PYHIP_CALL_GUARDED_THREADED(hipMemsetD8Async, (dst, uc, n, s_handle));
+        PYHIP_CALL_GUARDED_THREADED(hipMemsetD8Async, (convert_devptr(dst), uc, n, s_handle));
         }
-        void  py_memset_d16_async(hipDeviceptr_t dst, unsigned short us, size_t n, py::object stream_py )
+        void  py_memset_d16_async(DEV_PTR dst, unsigned short us, size_t n, py::object stream_py )
         {
         PYHIP_PARSE_STREAM_PY;
-        PYHIP_CALL_GUARDED_THREADED(hipMemsetD16Async, (dst, us, n, s_handle));
+        PYHIP_CALL_GUARDED_THREADED(hipMemsetD16Async, (convert_devptr(dst), us, n, s_handle));
         }
-        void  py_memset_d32_async(hipDeviceptr_t dst, unsigned int ui, size_t n, py::object stream_py )
+        void  py_memset_d32_async(DEV_PTR dst, unsigned int ui, size_t n, py::object stream_py )
         {
         PYHIP_PARSE_STREAM_PY;
-        PYHIP_CALL_GUARDED_THREADED(hipMemsetD32Async, (dst, ui, n, s_handle));
+        PYHIP_CALL_GUARDED_THREADED(hipMemsetD32Async, (convert_devptr(dst), ui, n, s_handle));
         }
 /*
-        void  py_memset_d2d8_async(hipDeviceptr_t dst, size_t dst_pitch,
+        void  py_memset_d2d8_async(DEV_PTR dst, size_t dst_pitch,
         unsigned char uc, size_t width, size_t height, py::object stream_py )
         {
         PYHIP_PARSE_STREAM_PY;
-        PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D8Async, (dst, dst_pitch, uc, width, height, s_handle));
+        PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D8Async, (convert_devptr(dst), dst_pitch, uc, width, height, s_handle));
         }
 
-        void  py_memset_d2d16_async(hipDeviceptr_t dst, size_t dst_pitch,
+        void  py_memset_d2d16_async(DEV_PTR dst, size_t dst_pitch,
         unsigned short us, size_t width, size_t height, py::object stream_py )
         {
         PYHIP_PARSE_STREAM_PY;
-        PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D16Async, (dst, dst_pitch, us, width, height, s_handle));
+        PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D16Async, (convert_devptr(dst), dst_pitch, us, width, height, s_handle));
         }
 
-        void  py_memset_d2d32_async(hipDeviceptr_t dst, size_t dst_pitch,
+        void  py_memset_d2d32_async(DEV_PTR dst, size_t dst_pitch,
         unsigned int ui, size_t width, size_t height, py::object stream_py )
         {
         PYHIP_PARSE_STREAM_PY;
-        PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D32Async, (dst, dst_pitch, ui, width, height, s_handle));
+        PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D32Async, (convert_devptr(dst), dst_pitch, ui, width, height, s_handle));
         }
 */
         // }}}
 
         // {{{ memory copies
 
-        void py_memcpy_htod(hipDeviceptr_t dst, py::object src)
+        void py_memcpy_htod(DEV_PTR dst, py::object src)
         {
         py_buffer_wrapper buf_wrapper;
         buf_wrapper.get(src.ptr(), PyBUF_ANY_CONTIGUOUS);
 
         PYHIP_CALL_GUARDED_THREADED(hipMemcpyHtoD,
-                (dst, buf_wrapper.m_buf.buf, buf_wrapper.m_buf.len));
+                (convert_devptr(dst), buf_wrapper.m_buf.buf, buf_wrapper.m_buf.len));
         }
 
 
 
 
-        void py_memcpy_htod_async(hipDeviceptr_t dst, py::object src, py::object stream_py)
+        void py_memcpy_htod_async(DEV_PTR dst, py::object src, py::object stream_py)
         {
         py_buffer_wrapper buf_wrapper;
         buf_wrapper.get(src.ptr(), PyBUF_ANY_CONTIGUOUS);
@@ -193,25 +198,25 @@ namespace
         PYHIP_PARSE_STREAM_PY;
 
         PYHIP_CALL_GUARDED_THREADED(hipMemcpyHtoDAsync,
-                (dst, buf_wrapper.m_buf.buf, buf_wrapper.m_buf.len, s_handle));
+                (convert_devptr(dst), buf_wrapper.m_buf.buf, buf_wrapper.m_buf.len, s_handle));
         }
 
 
 
 
-        void py_memcpy_dtoh(py::object dest, hipDeviceptr_t src)
+        void py_memcpy_dtoh(py::object dest, DEV_PTR src)
         {
         py_buffer_wrapper buf_wrapper;
         buf_wrapper.get(dest.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
 
         PYHIP_CALL_GUARDED_THREADED(hipMemcpyDtoH,
-                (buf_wrapper.m_buf.buf, src, buf_wrapper.m_buf.len));
+                (buf_wrapper.m_buf.buf, convert_devptr(src), buf_wrapper.m_buf.len));
         }
 
 
 
 
-        void py_memcpy_dtoh_async(py::object dest, hipDeviceptr_t src, py::object stream_py)
+        void py_memcpy_dtoh_async(py::object dest, DEV_PTR src, py::object stream_py)
         {
         py_buffer_wrapper buf_wrapper;
         buf_wrapper.get(dest.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
@@ -219,7 +224,7 @@ namespace
         PYHIP_PARSE_STREAM_PY;
 
         PYHIP_CALL_GUARDED_THREADED(hipMemcpyDtoHAsync,
-                (buf_wrapper.m_buf.buf, src, buf_wrapper.m_buf.len, s_handle));
+                (buf_wrapper.m_buf.buf, convert_devptr(src), buf_wrapper.m_buf.len, s_handle));
         }
 
 
@@ -249,18 +254,18 @@ namespace
 
 
 
-        void  py_memcpy_dtod(hipDeviceptr_t dest, hipDeviceptr_t src,
+        void  py_memcpy_dtod(DEV_PTR dest, DEV_PTR src,
         unsigned int byte_count)
-        { PYHIP_CALL_GUARDED_THREADED(hipMemcpyDtoD, (dest, src, byte_count)); }
+        { PYHIP_CALL_GUARDED_THREADED(hipMemcpyDtoD, (convert_devptr(dest), convert_devptr(src), byte_count)); }
 
 
-        void  py_memcpy_dtod_async(hipDeviceptr_t dest, hipDeviceptr_t src,
+        void  py_memcpy_dtod_async(DEV_PTR dest, DEV_PTR src,
         unsigned int byte_count, py::object stream_py)
         {
         PYHIP_PARSE_STREAM_PY;
 
         PYHIP_CALL_GUARDED_THREADED(hipMemcpyDtoDAsync,
-                (dest, src, byte_count, s_handle));
+                (convert_devptr(dest), convert_devptr(src), byte_count, s_handle));
         }
 
 
@@ -847,7 +852,7 @@ namespace
         .def("__index__", mem_obj_to_long<cl>)
         ;
 
-        py::implicitly_convertible<pointer_holder_base, hipDeviceptr_t>();
+        py::implicitly_convertible<pointer_holder_base, DEV_PTR>();
         }
 
         {
@@ -861,7 +866,7 @@ namespace
         .DEF_SIMPLE_METHOD(free)
         ;
 
-        py::implicitly_convertible<device_allocation, hipDeviceptr_t>();
+        py::implicitly_convertible<device_allocation, DEV_PTR>();
         }
 /*
 
