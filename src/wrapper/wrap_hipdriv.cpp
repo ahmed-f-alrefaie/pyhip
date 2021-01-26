@@ -116,7 +116,7 @@ namespace
         void  py_memset_d32(hipDeviceptr_t dst, unsigned int ui, size_t n )
         { PYHIP_CALL_GUARDED_THREADED(hipMemsetD32, (dst, ui, n )); }
 
-        void  py_memset_d2d8(hipDeviceptr_t dst, size_t dst_pitch,
+ /*       void  py_memset_d2d8(hipDeviceptr_t dst, size_t dst_pitch,
         unsigned char uc, size_t width, size_t height )
         { PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D8, (dst, dst_pitch, uc, width, height)); }
 
@@ -127,7 +127,7 @@ namespace
         void  py_memset_d2d32(hipDeviceptr_t dst, size_t dst_pitch,
         unsigned int ui, size_t width, size_t height )
         { PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D32, (dst, dst_pitch, ui, width, height)); }
-
+*/
         // }}}
 
         // {{{ memory set async
@@ -147,7 +147,7 @@ namespace
         PYHIP_PARSE_STREAM_PY;
         PYHIP_CALL_GUARDED_THREADED(hipMemsetD32Async, (dst, ui, n, s_handle));
         }
-
+/*
         void  py_memset_d2d8_async(hipDeviceptr_t dst, size_t dst_pitch,
         unsigned char uc, size_t width, size_t height, py::object stream_py )
         {
@@ -168,7 +168,7 @@ namespace
         PYHIP_PARSE_STREAM_PY;
         PYHIP_CALL_GUARDED_THREADED(hipMemsetD2D32Async, (dst, dst_pitch, ui, width, height, s_handle));
         }
-
+*/
         // }}}
 
         // {{{ memory copies
@@ -254,7 +254,7 @@ namespace
         { PYHIP_CALL_GUARDED_THREADED(hipMemcpyDtoD, (dest, src, byte_count)); }
 
 
-        void  py_memcpy_dtod_async(CUdeviceptr dest, CUdeviceptr src,
+        void  py_memcpy_dtod_async(hipDeviceptr_t dest, hipDeviceptr_t src,
         unsigned int byte_count, py::object stream_py)
         {
         PYHIP_PARSE_STREAM_PY;
@@ -297,7 +297,7 @@ namespace
                 (void *) py::extract<intptr_t>(key_value[1])());
         #undef ADD_OPTION
 
-        CUDAPP_PRINT_CALL_TRACE("hipModuleLoadDataEx");
+        PYHIP_PRINT_CALL_TRACE("hipModuleLoadDataEx");
         hipError_t cu_status_code; \
         cu_status_code = hipModuleLoadDataEx(&mod, mod_buf, (unsigned int) options.size(),
                 const_cast<hipJitOption *>(&*options.begin()),
@@ -312,7 +312,7 @@ namespace
                 std::string(error_buf, error_buf_size));
 
         if (cu_status_code != hipSuccess)
-        throw pycuda::error("hipModuleLoadDataEx", cu_status_code,
+        throw pyhip::error("hipModuleLoadDataEx", cu_status_code,
                 std::string(error_buf, error_buf_size).c_str());
         // #else
         // if (py::len(py_options))
@@ -329,9 +329,9 @@ namespace
         PyObject *mem_obj_to_long(T const &mo)
         {
         #if defined(_WIN32) && defined(_WIN64)
-                return PyLong_FromUnsignedLongLong((hipDeviceptr_t) mo);
+                return PyLong_FromUnsignedLongLong((unsigned long long) mo);
         #else
-                return PyLong_FromUnsignedLong((hipDeviceptr_t) mo);
+                return PyLong_FromUnsignedLong((unsigned long) mo);
         #endif
         }
 
@@ -356,7 +356,7 @@ namespace
 
                 std::auto_ptr<Allocation> alloc(
                         new Allocation(
-                        tp_descr->elsize*pycuda::size_from_dims(dims.size(), &dims.front()),
+                        tp_descr->elsize*pyhip::size_from_dims(dims.size(), &dims.front()),
                         par1)
                         );
 
@@ -387,11 +387,11 @@ namespace
         py::handle<> register_host_memory(py::object ary, unsigned flags)
         {
         if (!PyArray_Check(ary.ptr()))
-        throw pycuda::error("register_host_memory", hipErrorInvalidValue,
+        throw pyhip::error("register_host_memory", hipErrorInvalidValue,
                 "ary argument is not a numpy array");
 
         if (!PyArray_ISCONTIGUOUS(ary.ptr()))
-        throw pycuda::error("register_host_memory", hipErrorInvalidValue,
+        throw pyhip::error("register_host_memory", hipErrorInvalidValue,
                 "ary argument is not contiguous");
 
         std::auto_ptr<registered_host_memory> regmem(
@@ -400,7 +400,7 @@ namespace
 
         PyObject *new_array_ptr = PyArray_FromInterface(ary.ptr());
         if (new_array_ptr == Py_NotImplemented)
-        throw pycuda::error("register_host_memory", hipErrorInvalidValue,
+        throw pyhip::error("register_host_memory", hipErrorInvalidValue,
                 "ary argument does not expose array interface");
 
         py::handle<> result(new_array_ptr);
@@ -443,7 +443,7 @@ namespace
                         DECLARE_EXC(LaunchError, HipError.get());
                         DECLARE_EXC(RuntimeError, HipError.get());
 
-                        py::register_exception_translator<pyhipa::error>(translate_hip_error);
+                        py::register_exception_translator<pyhip::error>(translate_hip_error);
                         }
 
 

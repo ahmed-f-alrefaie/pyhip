@@ -39,7 +39,7 @@ namespace pyhip
 
 
 
-/*  inline  hipDeviceptr_t mem_alloc_gc(size_t bytes)
+  inline  hipDeviceptr_t mem_alloc_gc(size_t bytes)
   {
     try
     {
@@ -47,7 +47,7 @@ namespace pyhip
     }
     catch (pyhip::error &e)
     { 
-      if (e.code() != CUDA_ERROR_OUT_OF_MEMORY)
+      if (e.code() != hipErrorOutOfMemory)
         throw;
     }
 
@@ -58,8 +58,8 @@ namespace pyhip
 
     // Now retry the allocation. If it fails again,
     // let it fail.
-    return pycuda::mem_alloc(bytes);
-  }*/
+    return pyhip::mem_alloc(bytes);
+  }
 }
 
 
