@@ -805,65 +805,65 @@ namespace pyhip
       }
   };
 
-//   class array : public boost::noncopyable, public context_dependent
-//   {
-//     private:
-//       hipArray m_array;
-//       bool m_managed;
+  class array : public boost::noncopyable, public context_dependent
+  {
+    private:
+      hiparray m_array;
+      bool m_managed;
 
-//     public:
-//       array(const HIP_ARRAY_DESCRIPTOR &descr)
-//         : m_managed(true)
-//       { PYHIP_CALL_GUARDED(hipArrayCreate, (&m_array, &descr)); }
+    public:
+      array(const HIP_ARRAY_DESCRIPTOR &descr)
+        : m_managed(true)
+      { PYHIP_CALL_GUARDED(hipArrayCreate, (&m_array, &descr)); }
 
-//       array(const HIP_ARRAY3D_DESCRIPTOR &descr)
-//         : m_managed(true)
-//       { PYHIP_CALL_GUARDED(hipArray3DCreate, (&m_array, &descr)); }
+      array(const HIP_ARRAY3D_DESCRIPTOR &descr)
+        : m_managed(true)
+      { PYHIP_CALL_GUARDED(hipArray3DCreate, (&m_array, &descr)); }
 
-//       array(hipArray ary, bool managed)
-//         : m_array(ary), m_managed(managed)
-//       { }
+      array(hipArray_t ary, bool managed)
+        : m_array(ary), m_managed(managed)
+      { }
 
-//       ~array()
-//       { free(); }
+      ~array()
+      { free(); }
 
-//       void free()
-//       {
-//         if (m_managed)
-//         {
-//           try
-//           {
-//             scoped_context_activation ca(get_context());
-//             PYHIP_CALL_GUARDED_CLEANUP(hipArrayDestroy, (&m_array));
-//           }
-//           PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(array);
+      void free()
+      {
+        if (m_managed)
+        {
+          try
+          {
+            scoped_context_activation ca(get_context());
+//            PYHIP_CALL_GUARDED_CLEANUP(hipArrayDestroy, (m_array));
+          }
+          PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(array);
 
-//           m_managed = false;
-//           release_context();
-//         }
-//       }
+          m_managed = false;
+          release_context();
+        }
+      }
 
-//       HIP_ARRAY_DESCRIPTOR get_descriptor()
-//       {
-//         HIP_ARRAY_DESCRIPTOR result;
-//         PYHIP_CALL_GUARDED(hipArrayGetDescriptor, (&result, &m_array));
-//         return result;
-//       }
+      HIP_ARRAY_DESCRIPTOR get_descriptor()
+      {
+        HIP_ARRAY_DESCRIPTOR result;
+        //PYHIP_CALL_GUARDED(hipArrayGetDescriptor, (&result, &m_array));
+        return result;
+      }
 
-//       HIP_ARRAY3D_DESCRIPTOR get_descriptor_3d()
-//       {
-//         HIP_ARRAY3D_DESCRIPTOR result;
-//         PYHIP_CALL_GUARDED(hipArray3DGetDescriptor, (&result, &m_array));
-//         return result;
-//       }
+      HIP_ARRAY3D_DESCRIPTOR get_descriptor_3d()
+      {
+        HIP_ARRAY3D_DESCRIPTOR result;
+        //PYHIP_CALL_GUARDED(hipArray3DGetDescriptor, (&result, &m_array));
+        return result;
+      }
 
 
-//       hipArray handle() const
-//       { return m_array; }
+      hipArray_t handle() const
+      { return m_array; }
 
-//     intptr_t handle_int() const
-//     { return  (intptr_t) m_array; }
-//   };
+    intptr_t handle_int() const
+    { return  (intptr_t) m_array; }
+  };
 
   // }}}
 
@@ -1012,6 +1012,32 @@ namespace pyhip
   }
 
 
+
+  inline
+    py::tuple mem_get_info()
+      {
+        size_t free, total;
+        PYHIP_CALL_GUARDED(hipMemGetInfo, (&free, &total));
+        return py::make_tuple(free, total);
+                        }
+
+  inline
+    hipDeviceptr_t mem_alloc(size_t bytes)
+      {
+              hipDeviceptr_t devptr;
+                  PYHIP_CALL_GUARDED(hipMalloc, (&devptr, bytes));
+                      return devptr;
+                        }
+
+  inline
+    void mem_free(hipDeviceptr_t devptr)
+      {
+              PYHIP_CALL_GUARDED_CLEANUP(hipFree, (devptr));
+                }
+
+
+
+
     class pointer_holder_base
   {
     public:
@@ -1025,61 +1051,7 @@ namespace pyhip
       {
         return py::object(
             py::handle<>(
-#if PY_VERSION_HEX >= 0x03030000
-              PyMemoryView_FromMemory((char *) (get_pointer() + offset), size,
-                PyBUF_WRITE)
-#else /* Py2 */
-              PyBuffer_FromReadWriteMemory((void *) (get_pointer() + offset), size)
-#endif
-              ));
-      }
-  };
-
-  class device_allocation : public boost::noncopyable, public context_dependent
-  {
-    private:
-      bool m_valid;
-
-    protected:
-      hipDeviceptr_t m_devptr;
-
-    public:
-      device_allocation(hipDeviceptr_t devptr)
-        : m_valid(true), m_devptr(devptr)
-      { }
-
-      void free()
-      {
-        if (m_valid)
-        {
-          try
-          {
-            scoped_context_activation ca(get_context());
-            mem_free(m_devptr);
-          }
-          PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(device_allocation);
-
-          release_context();
-          m_valid = false;
-        }
-        else
-          throw pyhip::error("device_allocation::free", hipErrorInvalidHandle);
-      }
-
-      ~device_allocation()
-      {
-        if (m_valid)
-          free();
-      }
-
-      operator hipDeviceptr_t() const
-      { return m_devptr; }
-
-      py::object as_buffer(size_t size, size_t offset)
-      {
-        return py::object(
-            py::handle<>(
-              PyMemoryView_FromMemory((char *) (m_devptr + offset), size,
+              PyMemoryView_FromMemory((char *) (get_pointer()) + offset, size,
                 PyBUF_WRITE)
 
               ));
@@ -1132,7 +1104,7 @@ namespace pyhip
         return py::object(
             py::handle<>(
 
-              PyMemoryView_FromMemory((char *) (m_devptr + offset), size,
+              PyMemoryView_FromMemory((char *) (m_devptr) + offset, size,
                 PyBUF_WRITE)
 
               ));
@@ -1158,22 +1130,24 @@ namespace pyhip
     PYHIP_CALL_GUARDED(hipMemGetAddressRange, (&base, &size, ptr));
     return py::make_tuple(base, size);
   }
-
+/*
   inline
   void memcpy_dtoa(array const &ary, unsigned int index, hipDeviceptr_t src, unsigned int len)
   { PYHIP_CALL_GUARDED_THREADED(hipMemcpyDtoA, (ary.handle(), index, src, len)); }
-
+*/
+/*
   inline
   void memcpy_atod(hipDeviceptr_t dst, array const &ary, unsigned int index, unsigned int len)
   { PYHIP_CALL_GUARDED_THREADED(hipMemcpyAtoD, (dst, ary.handle(), index, len)); }
-
+*/
+  /*
   inline
   void memcpy_atoa(
       array const &dst, unsigned int dst_index,
       array const &src, unsigned int src_index,
       unsigned int len)
   { PYHIP_CALL_GUARDED_THREADED(hipMemcpyAtoA, (dst.handle(), dst_index, src.handle(), src_index, len)); }
-
+*/
 
 #define MEMCPY_SETTERS \
     void set_src_host(py::object buf_py) \
@@ -1245,17 +1219,17 @@ namespace pyhip
 
     void execute(bool aligned=false) const
     {
-      if (aligned)
-      { PYHIP_CALL_GUARDED_THREADED(hipMemcpyParam2D, (this)); }
-      else
-      { PYHIP_CALL_GUARDED_THREADED(hipMemcpyParam2DUnaligned, (this)); }
+  //    if (aligned)
+      PYHIP_CALL_GUARDED_THREADED(hipMemcpyParam2D, (this)); 
+ //     else
+ //     { PYHIP_CALL_GUARDED_THREADED(hipMemcpyParam2DUnaligned, (this)); }
     }
 
     void execute_async(const stream &s) const
     { PYHIP_CALL_GUARDED_THREADED(hipMemcpyParam2DAsync, (this, s.handle())); }
   };
 
-
+/*
   struct memcpy_3d : public HIP_MEMCPY3D
   {
     memcpy_3d() : HIP_MEMCPY3D()
@@ -1273,7 +1247,7 @@ namespace pyhip
     void execute_async(const stream &s) const
     { PYHIP_CALL_GUARDED_THREADED(hipDrvMemcpy3DAsync, (this, s.handle())); }
   };
-
+*/
 
   // {{{ host memory
   inline void *mem_host_alloc(size_t size, unsigned flags=0)
@@ -1292,7 +1266,7 @@ namespace pyhip
 
   inline void mem_host_free(void *ptr)
   {
-    PYHIP_CALL_GUARDED_CLEANUP(hipFreeHost, (ptr));
+    PYHIP_CALL_GUARDED_CLEANUP(hipHostFree, (ptr));
   }
 
 
