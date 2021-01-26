@@ -26,7 +26,7 @@ namespace
 
         hipDeviceptr_t convert_devptr(DEV_PTR ptr)
         {
-                return reinterpret_cast<hipDeviceptr_t>(static_cast<intptr_t>(ptr))
+                return reinterpret_cast<hipDeviceptr_t>(static_cast<intptr_t>(ptr));
         }
 
 
