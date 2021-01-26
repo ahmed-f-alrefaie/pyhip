@@ -87,7 +87,7 @@ def preprocess_source(source, options, hipcc):
     return stdout.decode("utf-8", "replace")
 
 
-def compile_plain(source, options, keep, hipcc, cache_dir, target="cubin"):
+def compile_plain(source, options, keep, hipcc, cache_dir, target="o"):
     from os.path import join
 
     if cache_dir:
