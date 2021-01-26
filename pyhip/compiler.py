@@ -210,15 +210,15 @@ def _get_per_user_string():
     else:
         return "uid%d" % getuid()
 
-# DEFAULT_NVCC_FLAGS = [
+# DEFAULT_HIPCC_FLAGS = [
 #     _flag.strip()
-#     for _flag in os.environ.get("PYCUDA_DEFAULT_NVCC_FLAGS", "").split()
+#     for _flag in os.environ.get("PYCUDA_DEFAULT_HIPCC_FLAGS", "").split()
 #     if _flag.strip()
 # ]
 
 def compile(
     source,
-    nvcc="nvcc",
+    hipcc="hipcc",
     options=None,
     keep=False,
     no_extern_c=False,
@@ -226,7 +226,7 @@ def compile(
     code=None,
     cache_dir=None,
     include_dirs=[],
-    # target="cubin",
+    target="o",
 ):
 
     # assert target in ["cubin", "ptx", "fatbin"]
@@ -235,7 +235,7 @@ def compile(
         source = 'extern "C" {\n%s\n}\n' % source
 
     # if options is None:
-    #     options = DEFAULT_NVCC_FLAGS
+    #     options = DEFAULT_hipcc_FLAGS
 
     options = options[:]
     if arch is None:
@@ -296,7 +296,7 @@ def compile(
     for i in include_dirs:
         options.append("-I" + i)
 
-    return compile_plain(source, options, keep, nvcc, cache_dir, target)
+    return compile_plain(source, options, keep, hipcc, cache_dir, target)
 
 
 class CudaModule:
