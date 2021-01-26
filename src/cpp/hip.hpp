@@ -984,12 +984,12 @@ namespace pyhip
           HIP_LAUNCH_PARAM_END
         };
 
-        // PYHIP_CALL_GUARDED(
-        //     hipLaunchKernel, (m_function,
-        //       grid_dim[0], grid_dim[1], grid_dim[2],
-        //       block_dim[0], block_dim[1], block_dim[2],
-        //       shared_mem_bytes, s_handle, 0, config
-        //       ));
+        PYHIP_CALL_GUARDED(
+             hipModuleLaunchKernel, (m_function,
+               grid_dim[0], grid_dim[1], grid_dim[2],
+               block_dim[0], block_dim[1], block_dim[2],
+               shared_mem_bytes, s_handle, 0, config
+               ));
       }
 
 
