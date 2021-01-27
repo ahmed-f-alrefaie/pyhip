@@ -759,6 +759,9 @@ namespace pyhip
 
           context_push(m_context);
 
+
+
+        }
       }
 
       ~scoped_context_activation()
