@@ -93,10 +93,10 @@ def compile_plain(source, options, keep, hipcc, cache_dir, target="hsaco"):
     if cache_dir:
         checksum = _new_md5()
 
-        #if "#include" in source:
-        #    checksum.update(preprocess_source(source, options, hipcc).encode("utf-8"))
-        #else:
-        checksum.update(source.encode("utf-8"))
+        if "#include" in source:
+           checksum.update(preprocess_source(source, options, hipcc).encode("utf-8"))
+        else:
+            checksum.update(source.encode("utf-8"))
 
         for option in options:
             checksum.update(option.encode("utf-8"))

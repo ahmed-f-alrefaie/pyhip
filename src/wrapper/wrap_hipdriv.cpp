@@ -420,7 +420,7 @@ namespace
 
 
 
-        //void pyhip_expose_tools();
+        void pyhip_expose_tools();
 
         static bool import_numpy_helper()
         {
@@ -1224,7 +1224,7 @@ namespace
 
         // DEF_SIMPLE_FUNCTION(have_gl_ext);
 
-        //pyhip_expose_tools();
+        pyhip_expose_tools();
 
 
         }
