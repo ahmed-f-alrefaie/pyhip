@@ -15,7 +15,7 @@ from os import unlink
 from pytools.prefork import call_capture_output
 
 
-@lru_cache(maxsize=10)
+@memoize
 def hipcc_version(hipcc):
     import subprocess
     cmdline = [hipcc,'--version']
@@ -34,7 +34,7 @@ def hipcc_version(hipcc):
 
 
 
-@lru_cache(maxsize=1)
+@memoize
 def _find_hipcc():
     from .tools import search_on_path
     return search_on_path(['hipcc','hipcc.exe'])
@@ -48,7 +48,7 @@ def _new_md5():
     return hashlib.md5()
 
 
-def preprocess_source(source, options, hipcc):
+def preprocess_source(source,options, hipcc):
     handle, source_path = mkstemp(suffix=".cpp")
 
     outf = open(source_path, "w")
@@ -87,21 +87,21 @@ def preprocess_source(source, options, hipcc):
     return stdout.decode("utf-8", "replace")
 
 
-def compile_plain(source, options, keep, hipcc, cache_dir, target="o"):
+def compile_plain(source, options, keep, hipcc, cache_dir, target="hsaco"):
     from os.path import join
 
     if cache_dir:
         checksum = _new_md5()
 
-        if "#include" in source:
-            checksum.update(preprocess_source(source, options, hipcc).encode("utf-8"))
-        else:
-            checksum.update(source.encode("utf-8"))
+        #if "#include" in source:
+        #    checksum.update(preprocess_source(source, options, hipcc).encode("utf-8"))
+        #else:
+        checksum.update(source.encode("utf-8"))
 
         for option in options:
             checksum.update(option.encode("utf-8"))
-        checksum.update(get_hipcc_version(hipcc).encode("utf-8"))
-        from pycuda.characterize import platform_bits
+        checksum.update(hipcc_version(hipcc).encode("utf-8"))
+        from pyhip.characterize import platform_bits
 
         checksum.update(str(platform_bits()).encode("utf-8"))
 
@@ -120,6 +120,9 @@ def compile_plain(source, options, keep, hipcc, cache_dir, target="o"):
 
     from tempfile import mkdtemp
 
+    if options is None:
+        options = []
+
     file_dir = mkdtemp()
     file_root = "kernel"
 
@@ -136,7 +139,8 @@ def compile_plain(source, options, keep, hipcc, cache_dir, target="o"):
 
         print("*** compiler output in %s" % file_dir)
 
-    cmdline = [hipcc, "--" + target] + options + [cu_file_name]
+    cmdline = [hipcc, "--genco"] + [cu_file_name] + options + ['-o',join(file_dir, file_root + "." + target)]
+    print(cmdline)
     result, stdout, stderr = call_capture_output(
         cmdline, cwd=file_dir, error_on_nonzero=False
     )
@@ -226,16 +230,16 @@ def compile(
     code=None,
     cache_dir=None,
     include_dirs=[],
-    target="o",
+    target="hsaco",
 ):
 
     # assert target in ["cubin", "ptx", "fatbin"]
 
     if not no_extern_c:
         source = 'extern "C" {\n%s\n}\n' % source
-
-    # if options is None:
-    #     options = DEFAULT_hipcc_FLAGS
+    source = '#include <hip/hip_runtime.h>\n\n%s' %source  
+    if options is None:
+        options = []#DEFAULT_hipcc_FLAGS
 
     options = options[:]
     if arch is None:
@@ -304,7 +308,7 @@ class CudaModule:
         if arch is None:
             return
         try:
-            from pycuda.driver import Context
+            from pyhip.driver import Context
 
             capability = Context.get_device().compute_capability()
             # if tuple(map(int, tuple(arch.split("_")[1]))) > capability:
@@ -359,7 +363,7 @@ class SourceModule(CudaModule):
             include_dirs,
         )
 
-        from pycuda.driver import module_from_buffer
+        from pyhip.driver import module_from_buffer
 
         self.module = module_from_buffer(cubin)
 

@@ -27,6 +27,8 @@ os.environ["CXX"] = "hipcc"
 
 packages = find_packages(exclude=('tests', 'doc'))
 provides = ['pyhip', ]
+requires =['pytools','numpy',]
+
 
 def search_on_path(filenames):
     """Find file on system path."""
@@ -145,6 +147,7 @@ setup(name='pyhip',
         version='0.0.1',
         packages=packages,
         provides=provides,
+        requires=requires,
         ext_modules = [ext, ext_struct],
 #        cmdclass={'build_ext': custom_build_ext},
         zip_safe=False)
