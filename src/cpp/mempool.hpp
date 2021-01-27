@@ -6,7 +6,7 @@
 #ifndef _AFJDFJSDFSD_PYGPU_HEADER_SEEN_MEMPOOL_HPP
 #define _AFJDFJSDFSD_PYGPU_HEADER_SEEN_MEMPOOL_HPP
 
-
+#define PYGPU_PACKAGE pyhip
 
 
 #include <boost/ptr_container/ptr_map.hpp>

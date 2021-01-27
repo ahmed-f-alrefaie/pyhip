@@ -103,7 +103,7 @@ boost_det = find_library_dir('boost_thread')
 python_lib = find_library_dir('python3')
 
 ext = Extension('pyhip._driver',
-sources=['src/cpp/hip.cpp','src/cpp/bitlog.cpp','src/wrapper/wrap_hipdriv.cpp',],
+sources=['src/cpp/hip.cpp','src/cpp/bitlog.cpp','src/wrapper/wrap_hipdriv.cpp','src/wrapper/mempool.cpp'],
                 library_dirs=[boost_lib[1],python_lib[1]],
                 libraries=[python_lib[0], boost_lib[0], boost_sys[0], boost_det[0] ],
                 runtime_library_dirs=[boost_det[1], boost_sys[1],boost_lib[1],python_lib[1]],
