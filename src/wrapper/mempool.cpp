@@ -152,9 +152,9 @@ namespace
   PyObject *pooled_device_allocation_to_long(pooled_device_allocation const &da)
   {
 #if defined(_WIN32) && defined(_WIN64)
-    return PyLong_FromUnsignedLongLong(da.ptr());
+    return PyLong_FromVoidPtr(da.ptr());
 #else
-    return PyLong_FromUnsignedLong(da.ptr());
+    return PyLong_FromVoidPtr(da.ptr());
 #endif
   }
 
@@ -243,6 +243,7 @@ namespace
 
 void pyhip_expose_tools()
 {
+
   py::def("bitlog2", pyhip::bitlog2);
 
   {
@@ -264,7 +265,7 @@ void pyhip_expose_tools()
     py::class_<cl> wrapper("PageLockedAllocator",
         py::init<py::optional<unsigned> >());
   }
-/*
+
   {
     typedef pyhip::memory_pool<host_allocator> cl;
 
@@ -287,7 +288,7 @@ void pyhip_expose_tools()
     py::class_<cl, boost::noncopyable>(
         "PooledDeviceAllocation", py::no_init)
       .DEF_SIMPLE_METHOD(free)
-      .def("__int__", &cl::ptr)
+      .def("__int__", pooled_device_allocation_to_long)
       .def("__long__", pooled_device_allocation_to_long)
       .def("__index__", pooled_device_allocation_to_long)
       .def("__len__", &cl::size)
@@ -304,5 +305,5 @@ void pyhip_expose_tools()
       .def("__len__", &cl::size)
       ;
   }
-  */
+  
 }

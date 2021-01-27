@@ -348,12 +348,12 @@ namespace PYGPU_PACKAGE
         else
           throw PYGPU_PACKAGE::error(
               "pooled_device_allocation::free", 
-#ifdef PYGPU_PYCUDA
-              CUDA_ERROR_INVALID_HANDLE
-#endif
-#ifdef PYGPU_PYOPENCL
-              CL_INVALID_VALUE
-#endif
+//#ifdef PYGPU_PYCUDA
+              hipErrorInvalidHandle
+//#endif
+//#ifdef PYGPU_PYOPENCL
+              //CL_INVALID_VALUE
+//#endif
               );
       }
 
