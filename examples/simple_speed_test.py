@@ -49,7 +49,7 @@ import pyhip.autoinit
 import numpy
 from pyhip.compiler import SourceModule
 import pyhip.gpuarray as gpuarray
-# import pyhip.cumath
+import pyhip.hipmath
 from pyhip.elementwise import ElementwiseKernel
 
 blocks = 64
@@ -144,17 +144,17 @@ print("%fs, %s" % (secs, str(a_gpu.get()[:3])))
 # # GPUArray SECTION
 # # The result is copied back to main memory on each iteration, this is a bottleneck
 
-# a = numpy.ones(nbr_values).astype(numpy.float32)
-# a_gpu = gpuarray.to_gpu(a)
-# start.record() # start timing
-# for i in range(n_iter):
-#     a_gpu = pyhip.cumath.sin(a_gpu)
-# end.record() # end timing
-# # calculate the run length
-# end.synchronize()
-# secs = start.time_till(end)*1e-3
-# print("GPUArray time and first three results:")
-# print("%fs, %s" % (secs, str(a_gpu.get()[:3])))
+a = numpy.ones(nbr_values).astype(numpy.float32)
+a_gpu = gpuarray.to_gpu(a)
+start.record() # start timing
+for i in range(n_iter):
+    a_gpu = pyhip.hipmath.sin(a_gpu)
+end.record() # end timing
+# calculate the run length
+end.synchronize()
+secs = start.time_till(end)*1e-3
+print("GPUArray time and first three results:")
+print("%fs, %s" % (secs, str(a_gpu.get()[:3])))
 
 
 #############
