@@ -54,9 +54,9 @@ def get_elwise_module(
         __global__ void %(name)s(%(arguments)s)
         {
 
-          unsigned tid = threadIdx.x;
-          unsigned total_threads = gridDim.x*blockDim.x;
-          unsigned cta_start = blockDim.x*blockIdx.x;
+          unsigned tid = hipThreadIdx_x;
+          unsigned total_threads = hipGridDim_x*hipBlockDim_x;
+          unsigned cta_start = hipBlockDim_x*hipBlockIdx_x;
           unsigned i;
 
           %(loop_prep)s;
@@ -104,9 +104,9 @@ def get_elwise_range_module(
         extern "C"
         __global__ void %(name)s(%(arguments)s)
         {
-          unsigned tid = threadIdx.x;
-          unsigned total_threads = gridDim.x*blockDim.x;
-          unsigned cta_start = blockDim.x*blockIdx.x;
+          unsigned tid = hipThreadIdx_x;
+          unsigned total_threads = hipGridDim_x*hipBlockDim_x;
+          unsigned cta_start = hipBlockDim_x*hipBlockIdx_x;
           long i;
 
           %(loop_prep)s;
