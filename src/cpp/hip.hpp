@@ -544,7 +544,7 @@ namespace pyhip
 
 
       static void synchronize()
-      { PYHIP_CALL_GUARDED_THREADED(hipCtxSynchronize, ()); }
+      { PYHIP_CALL_GUARDED_THREADED(hipDeviceSynchronize, ()); }
 
       static boost::shared_ptr<context> current_context(context *except=0)
       {
