@@ -153,20 +153,20 @@ def _add_functionality():
             if isinstance(arg, np.number):
                 arg_data.append(arg)
                 format += arg.dtype.char
-            elif isinstance(arg, (DeviceAllocation,)): #PooledDeviceAllocation)):
+            elif isinstance(arg, (DeviceAllocation, PooledDeviceAllocation)):
                 arg_data.append(int(arg))
                 format += "P"
             elif isinstance(arg, ArgumentHandler):
                 handlers.append(arg)
                 arg_data.append(int(arg.get_device_alloc()))
                 format += "P"
-            # elif isinstance(arg, np.ndarray):
-            #     if isinstance(arg.base, ManagedAllocationOrStub):
-            #         arg_data.append(int(arg.base))
-            #         format += "P"
-            #     else:
-            #         arg_data.append(arg)
-            #         format += "%ds" % arg.nbytes
+            elif isinstance(arg, np.ndarray):
+                if isinstance(arg.base, ManagedAllocationOrStub):
+                    arg_data.append(int(arg.base))
+                    format += "P"
+                else:
+                    arg_data.append(arg)
+                    format += "%ds" % arg.nbytes
             elif isinstance(arg, np.void):
                 arg_data.append(_my_bytes(_memoryview(arg)))
                 format += "%ds" % arg.itemsize
