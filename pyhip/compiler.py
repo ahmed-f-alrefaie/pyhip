@@ -219,11 +219,11 @@ def _get_per_user_string():
     else:
         return "uid%d" % getuid()
 
-# DEFAULT_HIPCC_FLAGS = [
-#     _flag.strip()
-#     for _flag in os.environ.get("PYCUDA_DEFAULT_HIPCC_FLAGS", "").split()
-#     if _flag.strip()
-# ]
+DEFAULT_HIPCC_FLAGS = [
+    _flag.strip()
+    for _flag in os.environ.get("PYHIP_DEFAULT_HIPCC_FLAGS", "").split()
+    if _flag.strip()
+]
 
 def compile(
     source,
@@ -244,7 +244,7 @@ def compile(
         source = 'extern "C" {\n%s\n}\n' % source
     source = '#include <hip/hip_runtime.h>\n\n%s' %source  
     if options is None:
-        options = []#DEFAULT_hipcc_FLAGS
+        options = DEFAULT_HIPCC_FLAGS
 
     options = options[:]
     if arch is None:
