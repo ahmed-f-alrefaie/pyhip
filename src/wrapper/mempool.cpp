@@ -134,6 +134,9 @@ namespace
 
       operator hipDeviceptr_t()
       { return ptr(); }
+
+      operator DEV_PTR()
+      { return convert_hipptr(ptr()); }
   };
 
 
@@ -294,7 +297,7 @@ void pyhip_expose_tools()
       .def("__len__", &cl::size)
       ;
 
-    py::implicitly_convertible<pooled_device_allocation, hipDeviceptr_t>();
+    py::implicitly_convertible<pooled_device_allocation, DEV_PTR>();
   }
 
   {
