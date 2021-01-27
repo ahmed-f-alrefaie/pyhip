@@ -24,10 +24,7 @@ namespace
         HipRuntimeError,
         HipLaunchError;
 
-        hipDeviceptr_t convert_devptr(DEV_PTR ptr)
-        {
-                return reinterpret_cast<hipDeviceptr_t>(static_cast<intptr_t>(ptr));
-        }
+
 
 
         void translate_hip_error(const pyhip::error &err)
@@ -868,7 +865,7 @@ namespace
 
         py::implicitly_convertible<device_allocation, DEV_PTR>();
         }
-/*
+
 
         {
         typedef host_pointer cl;
@@ -924,7 +921,7 @@ namespace
         .def("unregister", &cl::free)
         ;
         }
-*/
+
 
         py::def("pagelocked_empty", numpy_empty<pagelocked_host_allocation>,
         (py::arg("shape"), py::arg("dtype"), py::arg("order")="C",

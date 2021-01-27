@@ -14,7 +14,7 @@
 namespace py = boost::python;
 
 
-hipDeviceptr_t convert_devptr(DEV_PTR ptr);
+
 
 namespace
 {

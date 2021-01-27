@@ -28,7 +28,14 @@
 typedef Py_ssize_t PYHIP_BUFFER_SIZE_T;
 
 
-typedef unsigned long DEV_PTR;
+
+typedef
+#if defined(_WIN32) && defined(_WIN64)
+    unsigned long long
+#else
+    unsigned long
+#endif
+DEV_PTR;
 
 #define PYHIP_PARSE_STREAM_PY \
     hipStream_t s_handle; \
@@ -118,6 +125,17 @@ typedef unsigned long DEV_PTR;
     /* PyErr_Warn( \
         PyExc_UserWarning, #TYPE " in dead context was implicitly cleaned up");*/ \
   }
+
+
+inline hipDeviceptr_t convert_devptr(DEV_PTR ptr)
+{
+        return reinterpret_cast<hipDeviceptr_t>(static_cast<intptr_t>(ptr));
+}
+
+inline DEV_PTR convert_hipptr(hipDeviceptr_t ptr)
+{
+        return reinterpret_cast<DEV_PTR>(static_cast<intptr_t>(ptr));
+}
 namespace pyhip
 {
 
@@ -1402,11 +1420,16 @@ namespace pyhip
       { return m_data; }
 
 
-      hipDeviceptr_t get_device_pointer()
+      hipDeviceptr_t get_raw_pointer()
       {
         hipDeviceptr_t result;
         PYHIP_CALL_GUARDED(hipHostGetDevicePointer, (&result, m_data, 0));
         return result;
+      }
+
+      DEV_PTR get_device_ptr()
+      {
+        return convert_hipptr(get_raw_pointer())
       }
 
   };

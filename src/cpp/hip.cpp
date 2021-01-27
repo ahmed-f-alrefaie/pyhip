@@ -4,3 +4,4 @@
 #include "hip.hpp"
 
 boost::thread_specific_ptr<pyhip::context_stack> pyhip::context_stack_ptr;
+
