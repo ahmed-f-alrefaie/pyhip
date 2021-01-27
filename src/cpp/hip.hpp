@@ -759,10 +759,6 @@ namespace pyhip
 
           context_push(m_context);
 
-          throw pyhip::error("scoped_context_activation",hipErrorInvalidContext,
-              "not available in CUDA < 2.0");
-
-        }
       }
 
       ~scoped_context_activation()
