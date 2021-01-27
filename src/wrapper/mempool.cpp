@@ -264,7 +264,7 @@ void pyhip_expose_tools()
     py::class_<cl> wrapper("PageLockedAllocator",
         py::init<py::optional<unsigned> >());
   }
-
+/*
   {
     typedef pyhip::memory_pool<host_allocator> cl;
 
@@ -304,4 +304,5 @@ void pyhip_expose_tools()
       .def("__len__", &cl::size)
       ;
   }
+  */
 }

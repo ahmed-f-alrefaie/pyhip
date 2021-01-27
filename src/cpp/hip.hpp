@@ -134,7 +134,7 @@ inline hipDeviceptr_t convert_devptr(DEV_PTR ptr)
 
 inline DEV_PTR convert_hipptr(hipDeviceptr_t ptr)
 {
-        return reinterpret_cast<DEV_PTR>(static_cast<intptr_t>(ptr));
+        return static_cast<DEV_PTR>(reinterpret_cast<intptr_t>(ptr));
 }
 namespace pyhip
 {
@@ -855,6 +855,7 @@ namespace pyhip
           try
           {
             scoped_context_activation ca(get_context());
+  //          hipArrayDestroy(m_array);
             //PYHIP_CALL_GUARDED_CLEANUP(hipArrayDestroy, (m_array));
           }
           PYHIP_CATCH_CLEANUP_ON_DEAD_CONTEXT(array);
@@ -1413,6 +1414,10 @@ namespace pyhip
         : m_valid(true), m_data(ptr)
       { }
 
+      host_pointer(DEV_PTR ptr)
+          : m_valid(true), m_data(convert_devptr(ptr))
+      {}
+
       virtual ~host_pointer()
       { }
 
@@ -1427,9 +1432,9 @@ namespace pyhip
         return result;
       }
 
-      DEV_PTR get_device_ptr()
+      DEV_PTR get_device_pointer()
       {
-        return convert_hipptr(get_raw_pointer())
+        return convert_hipptr(get_raw_pointer());
       }
 
   };
@@ -1519,10 +1524,15 @@ namespace pyhip
       void *data()
       { return (void *) m_devptr; }
 
-      hipDeviceptr_t get_device_pointer()
+      hipDeviceptr_t get_raw_pointer()
       {
         return m_devptr;
       }
+
+      DEV_PTR get_device_pointer()
+      {
+          return convert_hipptr(get_raw_pointer());
+    }
 
       void attach(unsigned flags, py::object stream_py)
       {
