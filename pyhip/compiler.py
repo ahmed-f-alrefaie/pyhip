@@ -49,6 +49,7 @@ def _new_md5():
 
 
 def preprocess_source(source,options, hipcc):
+    import pathlib
     handle, source_path = mkstemp(suffix=".cpp")
 
     outf = open(source_path, "w")
@@ -70,6 +71,10 @@ def preprocess_source(source,options, hipcc):
         raise CompileError(
             "hipcc preprocessing of %s failed" % source_path, cmdline, stderr=stderr
         )
+    
+    _file_out_path = pathlib.Path(source_path).stem+'.cui'
+    with open(_file_out_path, 'r') as f:
+        stdout = f.read()
 
     # sanity check
     if len(stdout) < 0.5 * len(source):
@@ -83,8 +88,8 @@ def preprocess_source(source,options, hipcc):
         )
 
     unlink(source_path)
-
-    return stdout.decode("utf-8", "replace")
+    unlink(_file_out_path)
+    return stdout
 
 
 def compile_plain(source, options, keep, hipcc, cache_dir, target="hsaco"):

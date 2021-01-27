@@ -180,7 +180,7 @@ def _add_functionality():
                     arg_data.append(int(gpudata))
                     format += "P"
 
-        from pycuda._pvt_struct import pack
+        from pyhip._pvt_struct import pack
 
         return handlers, pack(format, *arg_data)
 
@@ -286,7 +286,7 @@ def _add_functionality():
                 "unknown keyword arguments: " + ", ".join(kwargs.keys())
             )
 
-        from pycuda._pvt_struct import pack
+        from pyhip._pvt_struct import pack
 
         arg_buf = pack(func.arg_format, *args)
 
@@ -299,7 +299,7 @@ def _add_functionality():
                 "unknown keyword arguments: " + ", ".join(kwargs.keys())
             )
 
-        from pycuda._pvt_struct import pack
+        from pyhip._pvt_struct import pack
 
         arg_buf = pack(func.arg_format, *args)
 
@@ -321,7 +321,8 @@ def _add_functionality():
 
     def function_prepared_async_call(func, grid, block, stream, *args, **kwargs):
         if isinstance(block, tuple):
-            func._set_block_shape(*block)
+            pass
+           # func._set_block_shape(*block)
         else:
             from warnings import warn
 
@@ -341,7 +342,7 @@ def _add_functionality():
                 "unknown keyword arguments: " + ", ".join(kwargs.keys())
             )
 
-        from pycuda._pvt_struct import pack
+        from pyhip._pvt_struct import pack
 
         arg_buf = pack(func.arg_format, *args)
 
