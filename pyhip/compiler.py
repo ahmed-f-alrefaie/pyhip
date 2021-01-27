@@ -145,7 +145,7 @@ def compile_plain(source, options, keep, hipcc, cache_dir, target="hsaco"):
         print("*** compiler output in %s" % file_dir)
 
     cmdline = [hipcc, "--genco"] + [cu_file_name] + options + ['-o',join(file_dir, file_root + "." + target)]
-    print(cmdline)
+    #print(cmdline)
     result, stdout, stderr = call_capture_output(
         cmdline, cwd=file_dir, error_on_nonzero=False
     )
