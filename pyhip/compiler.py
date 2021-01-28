@@ -125,8 +125,6 @@ def compile_plain(source, options, keep, hipcc, cache_dir, target="hsaco"):
 
     from tempfile import mkdtemp
 
-    if options is None:
-        options = []
 
     file_dir = mkdtemp()
     file_root = "kernel"
@@ -252,8 +250,8 @@ def compile(
 
         try:
             from pyhip.driver import Context
-
-            arch = "sm_%d%d" % Context.get_device().compute_capability()
+            arch = 'gfx%d' % Context.get_device().properties().gcnArch  
+           # arch = "sm_%d%d" % Context.get_device().compute_capability()
         except Error:
             pass
 
@@ -287,8 +285,8 @@ def compile(
             if e.errno != EEXIST:
                 raise
 
-    # if arch is not None:
-    #     options.extend(["-arch", arch])
+    if arch is not None:
+        options.extend(["--offload-arch=%s" % arch,])
 
     # if code is not None:
     #     options.extend(["-code", code])
