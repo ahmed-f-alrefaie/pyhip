@@ -276,14 +276,14 @@ class DeviceData:
         self.max_threads = dev.get_attribute(drv.device_attribute.MAX_THREADS_PER_BLOCK)
         self.warp_size = dev.get_attribute(drv.device_attribute.WARP_SIZE)
 
-        if dev.compute_capability() >= (3, 0):
-            self.warps_per_mp = 64
-        elif dev.compute_capability() >= (2, 0):
-            self.warps_per_mp = 48
-        elif dev.compute_capability() >= (1, 2):
-            self.warps_per_mp = 32
-        else:
-            self.warps_per_mp = 24
+        # if dev.compute_capability() >= (3, 0):
+        self.warps_per_mp = 64
+        # elif dev.compute_capability() >= (2, 0):
+        #     self.warps_per_mp = 48
+        # elif dev.compute_capability() >= (1, 2):
+        #     self.warps_per_mp = 32
+        # else:
+        #     self.warps_per_mp = 24
 
         self.thread_blocks_per_mp = 8
         self.registers = dev.get_attribute(drv.device_attribute.MAX_REGISTERS_PER_BLOCK)
@@ -298,10 +298,8 @@ class DeviceData:
             self.smem_alloc_granularity = 512
             self.smem_granularity = 16
 
-        if dev.compute_capability() >= (2, 0):
-            self.register_allocation_unit = "warp"
-        else:
-            self.register_allocation_unit = "block"
+        self.register_allocation_unit = "warp"
+
 
     def align(self, bytes, word_size=4):
         return _int_ceiling(bytes, self.align_bytes(word_size))

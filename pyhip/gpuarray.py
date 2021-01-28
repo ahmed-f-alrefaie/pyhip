@@ -93,7 +93,7 @@ def _splay_backend(n, dev):
     devdata = DeviceData(dev)
 
     min_threads = devdata.warp_size
-    max_threads = 128
+    max_threads = 4*min_threads
     max_blocks = (
         4
         * devdata.thread_blocks_per_mp
