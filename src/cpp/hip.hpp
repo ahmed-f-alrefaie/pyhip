@@ -673,6 +673,7 @@ namespace pyhip
     PYHIP_CALL_GUARDED_THREADED(hipCtxCreate, (&ctx, flags, m_device));
     boost::shared_ptr<context> result(new context(ctx));
     context_stack::get().push(result);
+    hipSetDevice(m_device);
     return result;
   }
 
@@ -692,6 +693,7 @@ namespace pyhip
 
     PYHIP_CALL_GUARDED(hipCtxPushCurrent, (ctx->m_context));
     context_stack::get().push(ctx);
+    //hipSetDevice(m_device);
     ++ctx->m_use_count;
   }
 
