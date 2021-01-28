@@ -253,10 +253,10 @@ namespace pyhip
             hipDevice_t m_device;
             hipDeviceProp_t m_prop;
 
-            int get_properties()
+            static hipDeviceProp_t get_properties(hipDevice_t dev)
             {
                 hipDeviceProp_t result;
-                PYHIP_CALL_GUARDED(hipGetDeviceProperties, (&result, m_device));
+                PYHIP_CALL_GUARDED(hipGetDeviceProperties, (&result, dev));
                 return result;
             }
         public:

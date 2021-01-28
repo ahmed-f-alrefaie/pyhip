@@ -36,7 +36,7 @@
       def_readonly(#NAME, &cl::m_##NAME)
 
 #define DEF_SIMPLE_RO_MEMBER_ANY(NAME) \
-      def_readonly(#NAME, &cl::##NAME)
+      def_readonly(#NAME, &cl::NAME)
 
 #define DEF_SIMPLE_RW_MEMBER(NAME) \
       def_readwrite(#NAME, &cl::m_##NAME)

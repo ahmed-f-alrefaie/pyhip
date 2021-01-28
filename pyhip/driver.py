@@ -140,8 +140,10 @@ def _add_functionality():
                 result[att_id] = att_value
 
         return result
-    
+
+
     def device___getattr__(dev, name):
+        #if hasattr(device_attribute,name.upper()):
         return dev.get_attribute(getattr(device_attribute, name.upper()))
 
     def _build_arg_buf(args):
