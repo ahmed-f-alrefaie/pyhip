@@ -251,8 +251,16 @@ namespace pyhip
     {
         private:
             hipDevice_t m_device;
+            hipDeviceProp_t m_prop;
+
+            int get_properties()
+            {
+                hipDeviceProp_t result;
+                PYHIP_CALL_GUARDED(hipGetDeviceProperties, (&result, m_device));
+                return result;
+            }
         public:
-            device(hipDevice_t dev) : m_device(dev)
+            device(hipDevice_t dev) : m_device(dev), m_prop(get_properties(dev))
             {}
 
             static int count()
@@ -296,6 +304,12 @@ namespace pyhip
                 PYHIP_CALL_GUARDED(hipDeviceGetAttribute, (&result, attr, m_device));
                 return result;
             }
+
+            hipDeviceProp_t properties() const
+            {
+              return m_prop;
+            }
+            
 
             bool operator==(const device &other) const
             {
