@@ -131,7 +131,7 @@ def compile_plain(source, options, keep, hipcc, cache_dir, target="hsaco"):
     file_dir = mkdtemp()
     file_root = "kernel"
 
-    cu_file_name = file_root + ".cpp"
+    cu_file_name = file_root + ".hip.cpp"
     cu_file_path = join(file_dir, cu_file_name)
 
     outf = open(cu_file_path, "w")
