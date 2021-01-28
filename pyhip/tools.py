@@ -192,7 +192,7 @@ def make_default_context(ctx_maker=None):
     import os
 
     devn = os.environ.get("HIP_DEVICE")
-    print('DEVICE_NUMBER ',int(devn)) 
+    #print('DEVICE_NUMBER ',int(devn)) 
     # Is $HOME/.hip_device set ?
     if devn is None:
         try:
